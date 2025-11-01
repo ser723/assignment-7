@@ -1,23 +1,45 @@
 //server.js
 "use strict";
+
+//Express setup
 const express = require("express");
 const app = express();
+const Port = process.env.PORT || 3000;
 
+//Where environment variables are loaded from the .env file like PORT and DATABASE_URL
+require('dotenv').config();
+
+//Middleware setup-will help us process incoming requests on form data and json
 const multer = require("multer");
 app.use(multer().none());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("public"));
 
-require('dotenv').config();
-
-const { Pool } = required('pg');
+//Database Setup for pg
+const { Pool } = require('pg');
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL //config for connecting to the database (Neon)
 });
 
-async function testDb() {
-    let quertText = 'SELECT NOW()';
-}
+//Test connection when the pool is created
+pool.on('connect', () => {
+    console.log('Connection to the database was successful');
+});
 
+pool.on( 'error', (err) => {
+    console.error('Unexpected error on idle client', err);
+    process.exit(-1);
+});
+
+//MVC Integration and Route Setup
+const jokeRouter = require('./routes/jokeRouter');
+
+//The jokeRouter will handle all requests to /jokes endpoint to tie in with the joke controller and model to api paths
+app.use('/jokes', jokeRouter);
+
+//Server Listener
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`); 
+});
