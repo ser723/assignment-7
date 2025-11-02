@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jokebook API Demo</title>
+    <!--Tailwind CSS and Alpine.js for UI components and interactivity-->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: [ 'Inter', 'sans-serif' ],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f7f9fb;
+            font-family: 'Inter', sans-serif;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .section-card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);  
+        }
+        .api-oututput pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div class="container mx-auto">
+        <h1 class ="text-4xl font-extrabold text-gray-800 mb-6 border-b-4 border-indigo-500 pb-2">
+             Welcome to  My Jokebook API Demo
+        </h1>
+        <p class="text-gray-600 mb-8">
+            Explore the Jokebook API endpoints below. Click on each section to see example requests 
+            and responses. Base API URL assumed to be **`/jokebook`**.
+        </p>
+
+        <!--Output Display-->
+    </div>
+</body>
+</html>
