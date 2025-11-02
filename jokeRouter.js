@@ -1,4 +1,5 @@
-const express = required('express');
+//jokeRouter.js
+const express = require('express');
 const router = express.Router();
 
 //Import all controller functions from jokeController.js
@@ -7,7 +8,7 @@ const jokeController = require('../controllers/jokeController');
 //Joke Book API Routes
 
 //GET /jokebook/categories responds with all unique joke categories
-router.get('/categories', jokeController.getAllCategories);
+router.get('/categories', jokeController.getCategories);
 
 //GET /jokebook/category/ :category query param ?limit=X
 router.get('/category/:category', jokeController.getJokesByCategory);

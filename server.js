@@ -20,7 +20,8 @@ app.use(express.static("public"));
 const { Pool } = require('pg');
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL //config for connecting to the database (Neon)
+    connectionString: process.env.DATABASE_URL, //config for connecting to the database (Neon)
+    ssl: { rejectUnauthorized: false } //needed for some hosting services like Heroku and Neon
 });
 
 //Test connection when the pool is created
@@ -36,10 +37,10 @@ pool.on( 'error', (err) => {
 //MVC Integration and Route Setup
 const jokeRouter = require('./routes/jokeRouter');
 
-//The jokeRouter will handle all requests to /jokes endpoint to tie in with the joke controller and model to api paths
-app.use('/jokes', jokeRouter);
+//The jokeRouter will handle all requests to /jokebook endpoint to tie in with the joke controller and model to api paths
+app.use('/jokebook', jokeRouter);
 
 //Server Listener
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`); 
+app.listen( PORT, () => {
+    console.log(`Server is running on port ${ PORT }`); 
 });

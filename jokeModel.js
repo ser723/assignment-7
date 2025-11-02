@@ -1,9 +1,11 @@
+//jokeModel.js
 const { Pool } = require('pg');
 
 //Creation of a new pool instance to ensure correct ENV var 
 //allowing the model to be independently responsible for DB connection details
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
 });
 
 //to GET /jokebook/categories fetch all unique categories from the jokes table
@@ -84,7 +86,7 @@ const addJoke = async (setup, delivery, category) => {
 
         // 2. Insert the new joke
         const insertQuery = `
-            INSERT INTO jokes (category_id, setup, delivery) 
+            INSERT INTO joke (category_id, setup, delivery) 
             VALUES ($1, $2, $3);
         `;
         await pool.query(insertQuery, [categoryId, setup, delivery]);
