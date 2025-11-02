@@ -46,6 +46,144 @@
         </p>
 
         <!--Output Display-->
+        <div id="api-output" class="mb-8 p-4 rounded-lg bg-white border border-gray-200 section-card">
+            <h2 class="text-x1 font-semibold mb-3 text-indigo-700"> API Response</h2>
+            <pre class="api-output text-sm text-gray-700 bg-gray-50 p-3 rounded-md overflow-auto h-40">
+                Awaiting request...
+            </pre>
+        </div>
+
+        <!-- API Endpoints Section -->
+         <div class="space-y-8">
+
+            <!-- 1.GET /jokebook/categories -->
+             <div class="p-6 bg-white rounded-xl section-card">
+                <h3 class="text-2x1 font-bold text-gray-800 mb-3">1.Get Categories</h3>
+                <p class="text-gray-600 mb-4"><code> GET /jokebook/categories</code></p>
+                <button onclick="fetchCategories()" class="w-full sm:w-auto px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
+                    Fetch All Categories
+                </button>
+             </div>
+
+             <!-- 2.GET /jokebook/category/ :category -->
+             <div class="p-6 bg-white rounded-xl section-card">
+                <h3 class="text-2x1 font-bold text-gray-800 mb-3">2.Get Jokes by Category</h3>
+                <p class="text-gray-600 mb-4"><code> GET /jokebook/category/:category?limit=x</code></p>
+                <div class="flex flex-col sm:flex-row sm:flex-row gap-4">
+                 <input type="text" id="categoryName" value="funnyJoke" placeholder="Category Name (e.g., funnyJoke)" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="number" id="jokeLimit" placeholder="Limit (Optional)" class="w-24 p-3 border border-gray-300 rounded-lg">
+                    <button onclick="fetchJokesByCategory()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                        Fetch Jokes
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. GET /jokebook/random -->
+            <div class="p-6 bg-white rounded-xl section-card">
+                <h3 class="text-2x1 font-bold text-gray-800 mb-3">3.Get Random Joke</h3>
+                <p class="text-gray-600 mb-4"><code> GET /jokebook/random</code></p>
+                <button onclick="fetchRandomJoke()" class="w-full sm:w-auto px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors">
+                    Fetch Random Joke
+                </button>
+            </div>
+
+            <!-- 4. GET /jokebook/joke/add -->
+             <div class="p-6 bg-white rounded-xl section-card">
+                <h3 class="text-2x1 font-bold text-gray-800 mb-3">4.Add New Joke</h3>
+                <p class="text-gray-600 mb-4"><code> POST /jokebook/joke/add</code></p>
+                <div class="space-y-4">
+                  <input type="text" id="addCategory" value="newJoke" placeholder="Category" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="text" id="addSetup" value="Why don't scientists trust atoms?" placeholder="Setup" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="text" id="addDelivery" value="Because they make up everything!" placeholder="Delivery" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <button onclick="addJoke()" class="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                        Add Joke
+                    </button>
+                </div>
+            </div>
+
+        </div>
     </div>
+
+    <script>
+        const BASE_URL = '/jokebook';
+
+        // Function to update API output display
+        function displayResponse(data) {
+            const pre = document.querySelector('#api-output pre');
+            pre.textContent = JSON.stringify(data, null, 2);
+        }
+
+        // 1. GET /categories
+        async function fetchCategories() {
+            displayResponse({message: 'Fetching categories...'});
+            try {
+                const response = await fetch(`${BASE_URL}/categories`);
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: 'Failed to connect to API', details: error.message });
+            }
+        }
+
+        // 2. GET /category/:category
+         async function fetchJokesByCategory() {
+            const category = document.getElementById('categoryName').value.trim();
+            const limit = document.getElementById('jokeLimit').value.trim();
+            let url = `${BASE_URL}/category/${category}`;
+            
+            if (limit) {
+                url += `?limit=${limit}`;
+            }
+
+            displayResponse({ message: `Fetching jokes for category: ${category}` });
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: 'Failed to connect to API', details: error.message });
+            }
+        }
+
+        // 3. GET /random ---
+        async function fetchRandomJoke() {
+            displayResponse({ message: 'Fetching random joke...' });
+            try {
+                const response = await fetch(`${BASE_URL}/random`);
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: 'Failed to connect to API', details: error.message });
+            }
+        }
+        // 4. POST /joke/add ---
+        async function addJoke() {
+            const category = document.getElementById('addCategory').value.trim();
+            const setup = document.getElementById('addSetup').value.trim();
+            const delivery = document.getElementById('addDelivery').value.trim();
+
+            if (!category || !setup || !delivery) {
+                return displayResponse({ error: 'Missing Data', message: 'All fields (Category, Setup, Delivery) are required for POST.' });
+            }
+
+            const jokeData = { category, setup, delivery };
+            displayResponse({ message: `Attempting to add joke...`, payload: jokeData });
+
+            try {
+                const response = await fetch(`${BASE_URL}/joke/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jokeData),
+                });
+
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: 'Failed to connect to API or server error', details: error.message });
+            }
+        }
+    </script>
 </body>
 </html>
