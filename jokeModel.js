@@ -74,7 +74,6 @@ const addJoke = async (req, res) => {
 };
 
 module.exports = {
-    // Exporting the function with the correct name
     getAllCategories,
     getJokesByCategory,
     getRandomJoke,
