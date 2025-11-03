@@ -2,8 +2,8 @@
 const { get } = require('http');
 const jokeModel = require('../models/jokeModel');
 
-//GET /jokebook/categories responds with a list of all avalailable joke categories
-const getCategories = async (req, res) => {
+//GET /jokebook/categories responds with a list of all available joke categories
+const getAllCategories = async (req, res) => {
     try {
         const categories = await jokeModel.getAllCategories();
         res.status(200).json(categories);

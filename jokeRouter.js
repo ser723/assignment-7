@@ -8,7 +8,7 @@ const jokeController = require('../controllers/jokeController');
 //Joke Book API Routes
 
 //GET /jokebook/categories responds with all unique joke categories
-router.get('/categories', jokeController.getCategories);
+router.get('/categories', jokeController.getAllCategories);
 
 //GET /jokebook/category/ :category query param ?limit=X
 router.get('/category/:category', jokeController.getJokesByCategory);

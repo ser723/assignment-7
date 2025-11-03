@@ -1,110 +1,82 @@
-//jokeModel.js
-const { Pool } = require('pg');
+const jokeModel = require('../models/jokeModel');
 
-//Creation of a new pool instance to ensure correct ENV var 
-//allowing the model to be independently responsible for DB connection details
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-//to GET /jokebook/categories fetch all unique categories from the jokes table
-const getAllCategories = async () => {
+//GET /jokebook/categories responds with a list of all available joke categories
+const getAllCategories = async (req, res) => {
     try {
-        const query = ' SELECT name FROM categories ORDER BY name;';
-        const result = await pool.query(query);
-        return result. rows.map(row => row.name);
+        const categories = await jokeModel.getAllCategories();
+        res.status(200).json(categories);
     } catch (error) {
-        console.error("Error fetching getAllCategories:", error);
-        throw new Error("Could not fetch categories from the database.");
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch categories due to an internal server error."});
     }
 };
 
-//to GET /jokebook/category/:category fetch all jokes from a specific category
-const getJokesByCategory = async (category, limit) => {
+//GET /jokebook/category/:category responds with jokes from the specified category
+const getJokesByCategory = async (req, res) => {
+    // Ensure correct parameter name 'category' is used.
+    const category = req.params.category; 
+    const limit = req.query.limit;
+
     try {
-        let query = `
-            SELECT j.setup, j.delivery
-            FROM jokes j
-            JOIN categories c ON j.category_id = c.id
-            WHERE c.name = $1
-            ORDER BY j.id
-            `;
-            const values = [category];
+        const jokes = await jokeModel.getJokesByCategory(category, limit);
 
-            if (limit && !isNaN(parseInt(limit))) {
-                query += ' LIMIT $2';
-                values.push(parseInt(limit));
-            } else {
-                query += ';';
-            }
+        // Standardized error check to match Model's return value ('invalid_category').
+        if (jokes === 'invalid_category') {
+            return res.status(404).json({ message: `Error: Category '${category}' is not valid.` });
+        }
+        res.status(200).json(jokes);
 
-            const result = await pool.query(query, values);
-        
-        if (result.rows.length === 0) {
-            const categoryCheck = await pool.query('SELECT id FROM categories WHERE name = $1'[category]);
-            if (categoryCheck.rows.length === 0) {
-                return 'invalid category';
-            }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch jokes due to an internal server error."});
+    }
+};
+
+//GET /jokebook/random responds with a single random joke from the database
+const getRandomJoke = async (req, res) => {
+    try {
+        const joke = await jokeModel.getRandomJoke();
+
+        if (!joke) {
+            return res.status(404).json({ message: "No jokes found in the database." });
         }
 
-        return result.rows;
+        res.status(200).json(joke);
     } catch (error) {
-        console.error('Error in getJokesByCategory for ${category}:', error);
-        throw new Error("Could not fetch jokes from the database.");
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch a random joke due to an internal server error."});
     }
 };
 
-//to GET /jokebook/random fetch a single random joke from the jokes table
-const getRandomJoke = async () => {
+//POST /jokbook/joke/add adds a new joke to the database and responds with the updated joke list for that category
+const addJoke = async (req, res) => {
+    const { category, setup, delivery } = req.body;
+
+    if (!category || !setup || !delivery) {
+        return res.status(400).json({ 
+            message: "Error: Missing one or more required attributes (category, setup, delivery) in the request body." 
+        });
+    }
+    
     try {
-        const query = `
-            SELECT setup, delivery
-            FROM jokes
-            ORDER BY RANDOM()
-            LIMIT 1;
-        `;
-        const result = await pool.query(query);
-        return result.rows[0];
+        // Parameter order in Model call is (category, setup, delivery)
+        const updatedJokes = await jokeModel.addJoke(category, setup, delivery);
+
+        res.status(201).json({
+            message: "Joke added successfully!",
+            category: category,
+            updatedJokes: updatedJokes
+        });
     } catch (error) {
-        console.error("Error in getRandomJoke:", error);
-        throw new Error("Could not fetch a random joke from the database.");
+        console.error(error);
+        res.status(500).json({ message: `Failed to add joke: ${error.message}` });
     }
 };
-
-//to POST /jokebook/joke add a new joke to the jokes table
-const addJoke = async (setup, delivery, category) => {
-    try {
-         // 1. Find or create the category ID
-        let categoryResult = await pool.query('SELECT id FROM categories WHERE name = $1', [category]);
-
-        if (categoryResult.rows.length === 0) {
-            // Optionally, create the category if it doesn't exist
-            categoryResult = await pool.query('INSERT INTO categories (name) VALUES ($1) RETURNING id', [category]);
-        }
-        const categoryId = categoryResult.rows[0].id;
-
-        // 2. Insert the new joke
-        const insertQuery = `
-            INSERT INTO joke (category_id, setup, delivery) 
-            VALUES ($1, $2, $3);
-        `;
-        await pool.query(insertQuery, [categoryId, setup, delivery]);
-
-        // 3. Return the updated joke list for that category (using existing function)This implicitly satisfies the 'responds with the updated jokebook for that category' requirement
-        return getJokesByCategory(category); 
-
-    } catch (error) {
-        console.error("Error in addJoke:", error);
-        // Check for common errors (e.g., category name too long) and provide specific feedback
-        throw new Error(`Database error adding joke: ${error.message}`);
-    }
-};
-
 
 module.exports = {
+    // Exporting the function with the correct name
     getAllCategories,
     getJokesByCategory,
     getRandomJoke,
-    addJoke,
+    addJoke
 };

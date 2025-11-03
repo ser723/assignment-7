@@ -4,7 +4,7 @@
 //Express setup
 const express = require("express");
 const app = express();
-const Port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 //Where environment variables are loaded from the .env file like PORT and DATABASE_URL
 require('dotenv').config();
@@ -21,7 +21,9 @@ const { Pool } = require('pg');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL, //config for connecting to the database (Neon)
-    ssl: { rejectUnauthorized: false } //needed for some hosting services like Heroku and Neon
+    ssl: { 
+        rejectUnauthorized: false
+     } 
 });
 
 //Test connection when the pool is created
@@ -41,6 +43,6 @@ const jokeRouter = require('./routes/jokeRouter');
 app.use('/jokebook', jokeRouter);
 
 //Server Listener
-app.listen( PORT, () => {
-    console.log(`Server is running on port ${ PORT }`); 
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`); 
 });
