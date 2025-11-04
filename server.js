@@ -1,96 +1,57 @@
-"use strict";
+/**
+ * Main Express Application Server
+ * This file sets up the Express application, configures middleware,
+ * imports the JokeController and JokeRouter, and mounts the router
+ * to handle all requests under the '/jokebook' path.
+ */
 
-// The 'path' module must be imported to use path.join()
-const path = require('path');
+// Core imports
 const express = require('express');
+const path = require('path');
+
+// Factory imports
+const jokeControllerFactory = require('./jokeControllerFactory');
+const jokeRouterFactory = require('./jokeRouter');
+
+// --- Initialization ---
 const app = express();
+const PORT = 3000; 
 
-// If using dotenv to manage environment variables
-require('dotenv').config();
+// 1. Instantiate the Joke Controller
+// This holds the business logic and mock data
+const jokeController = jokeControllerFactory();
 
-const PORT = process.env.PORT || 3000;
+// 2. Instantiate the Joke Router
+// This configures the routes using the controller methods
+const jokeRouter = jokeRouterFactory(jokeController);
 
-// Middleware setup
-const multer = require("multer");
-app.use(multer().none());
 
-app.use(express.urlencoded({ extended: true })); // To parse URL-encoded bodies
-app.use(express.json());  // To parse JSON request bodies
+// --- Middleware Configuration ---
 
-// Serve static files from the 'public' directory for frontend
-app.use(express.static( path.join(__dirname, 'public') ) );
+// Middleware to parse JSON request bodies (essential for POST /jokebook/jokes)
+app.use(express.json());
 
-// Database Setup for pg
-const { Pool } = require('pg');
+// Serve static files (like public/index.html) from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Create the connection pool (but don't connect yet)
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL, // config for connecting to the database (Neon)
-    ssl: { 
-        rejectUnauthorized: false
-    } 
+
+// --- Route Mounting ---
+
+// Mount the JokeRouter at the base path specified in the router's documentation
+// All routes defined in jokeRouter.js will be prefixed with '/jokebook'
+app.use('/jokebook', jokeRouter);
+
+// Set up the root route to serve the main HTML file
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Utility function to test the database connection
-async function testDbConnection() { 
-    try {
-    const client = await pool.connect();
-        console.log('Database connection pool established successfully.');
-    client.release();
-    return true;
-    } catch (err) {
-        console.error('CRITICAL ERROR: Failed to establish database connection.', err.message);
-    return false;
-    }
-}
 
-// Function to start the Express server, dependent on DB connection
-async function startServer() {
-    // Test connection before starting the server
-    const isConnected = await testDbConnection();
+// --- Server Start ---
+app.listen(PORT, () => {
+    console.log(`Jokebook API running at http://localhost:${PORT}`);
+    console.log(`Client demo available at http://localhost:${PORT}/`);
+});
 
-    if (!isConnected) {
-     console.error('Server shutdown due to database connection failure.');
-        // Optionally exit the process if the database is mandatory
-        // process.exit(1); 
-        return; 
-    }
-
-    // --- MVC Integration and Route Setup ---
-    
-    // 1. Initialize the Model (requires: pool)
-    const jokeModelFactory = require('./models/jokeModel');
-    const jokeModel = jokeModelFactory(pool);
-
-    // 2. Initialize the Controller (requires: jokeModel)
-    const jokeControllerFactory = require('./controllers/jokeController');
-    const jokeController = jokeControllerFactory(jokeModel);
-
-    // 3. Initialize the Router (requires: jokeController)
-    const jokeRouterFactory = require('./routes/jokeRouter');
-    const jokeRouter = jokeRouterFactory(jokeController);
-
-    // The jokeRouter will handle all requests to /jokebook endpoint
-    app.use('/jokebook', jokeRouter);
-
-    // Simple root path handler to serve the main HTML page, index.html
-    app.get('/', (req, res) => {
-        res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    });
-
-    // Basic Error Handling Middleware for Express
-    app.use((err, req, res, next) => { 
-    console.error(err.stack);
-        // Use the status code from the error if available, otherwise default to 500
-     res.status(err.status || 500).send('Something broke! Internal Server Error: ' + err.message);
-    });
-
-    // Server Listener
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`); 
-        console.log(`Access the application at http://localhost:${PORT}`);
-    });
-}
-
-// Start the whole application
-startServer();
+// Export the app instance (useful for testing)
+module.exports = app;
