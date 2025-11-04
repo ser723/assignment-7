@@ -27,10 +27,11 @@ const jokeModelFactory = (pool) => {
      * Retrieves all jokes associated with a specific category ID.
      * It uses a JOIN to include the category name for context.
      *
-     * @param {number} categoryId - The ID of the category to filter by.
+     * @param {number} category_id - The ID of the category to filter by.
+     * @param {number} category_id - The ID of the category to filter by.
      * @returns {Array<Object>} An array of joke objects: [{ id, setup, delivery, category_id, category_name }, ...]
      */
-    const getJokesByCategoryId = async (categoryId) => {
+    const getJokesByCategoryId = async (category_id) => {
         try {
             // *** CRITICAL FIX: Ensure 'setup' and 'delivery' columns are correctly referenced. ***
             const query = `
@@ -45,11 +46,11 @@ const jokeModelFactory = (pool) => {
                 WHERE j.category_id = $1
                 ORDER BY j.id ASC;
             `;
-            const { rows } = await pool.query(query, [categoryId]);
+            const { rows } = await pool.query(query, [category_id]);
             return rows;
         } catch (error) {
             // CRITICAL: Log the actual SQL error message
-            console.error(`MODEL ERROR (getJokesByCategoryId) for ID ${categoryId}:`, error.message);
+            console.error(`MODEL ERROR (getJokesByCategoryId) for ID ${category_id}:`, error.message);
             throw error; // Re-throw the error for the controller to handle
         }
     };
@@ -60,10 +61,10 @@ const jokeModelFactory = (pool) => {
      *
      * @param {string} setup - The first part (question) of the joke.
      * @param {string} delivery - The second part (punchline) of the joke.
-     * @param {number} categoryId - The ID of the category the joke belongs to.
+     * @param {number} category_id - The ID of the category the joke belongs to.
      * @returns {object} The newly created joke object, including its ID.
      */
-    const addJoke = async (setup, delivery, categoryId) => {
+    const addJoke = async (setup, delivery, category_id) => {
         try {
             // SQL query uses the correct column names: setup, delivery, and category_id
             const query = `
@@ -71,8 +72,7 @@ const jokeModelFactory = (pool) => {
                 VALUES ($1, $2, $3)
                 RETURNING id, setup, delivery, category_id;
             `;
-            const { rows } = await pool.query(query, [setup, delivery, categoryId]);
-
+            const { rows } = await pool.query(query, [setup, delivery, category_id]);
             return rows[0];
         } catch (error) {
             // CRITICAL: Log the actual SQL error message
