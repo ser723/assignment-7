@@ -1,7 +1,7 @@
 /**
  * Main Express Application Server
  * This file sets up the Express application, configures middleware,
- * imports the JokeController, JokeRouter, and JokeModel, and mounts the router
+ * imports the JokeControllerFactory, JokeRouter, and JokeModel, and mounts the router
  * to handle all requests under the '/jokebook' path.
  *
  * It includes initialization of the Joke Database Model before starting the server.
@@ -15,8 +15,8 @@ const path = require('path');
 require('dotenv').config(); 
 
 // Factory and Model imports
-const jokeController = require('./jokeController');
-const jokeRouter = require('./jokeRouter');
+const jokeControllerFactory = require('./jokeControllerFactory'); // CORRECTED: Should be 'jokeControllerFactory'
+const jokeRouterFactory = require('./jokeRouter');
 const jokeModel = require('./jokeModel'); // Import the Database Model
 
 // --- Initialization ---
