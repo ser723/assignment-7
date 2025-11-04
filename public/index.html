@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jokebook API Demo</title>
-    <!--Tailwind CSS and Alpine.js for UI components and interactivity-->
+    <!--Tailwind CSS for modern styling-->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -27,12 +27,12 @@
             max-width: 900px;
         }
         .section-card {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);  
+            box-shadow: 0 4px 10px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); 
         }
-        /* Fixed selector typo for the API response box */
         .api-output pre { 
             white-space: pre-wrap;
             word-wrap: break-word;
+            min-height: 160px; /* Ensure space is visible */
         }
     </style>
 </head>
@@ -42,14 +42,13 @@
             Welcome to My Jokebook API Demo
         </h1>
         <p class="text-gray-600 mb-8">
-            Explore the Jokebook API endpoints below. Click on each section to see example requests 
-            and responses. Base API URL assumed to be **`/jokebook`**.
+            Explore the **Jokebook API** endpoints below. Click on the buttons to send requests and see the live responses. The base API URL is **`/jokebook`**.
         </p>
 
         <!--Output Display-->
-        <div id="api-output" class="mb-8 p-4 rounded-lg bg-white border border-gray-200 section-card">
-            <h2 class="text-xl font-semibold mb-3 text-indigo-700"> API Response</h2>
-            <pre class="api-output text-sm text-gray-700 bg-gray-50 p-3 rounded-md overflow-auto h-40">
+        <div id="api-output" class="mb-8 p-4 rounded-xl bg-white border border-gray-200 section-card transition-all">
+            <h2 class="text-xl font-semibold mb-3 text-indigo-700">API Response</h2>
+            <pre class="api-output text-sm text-gray-700 bg-gray-50 p-3 rounded-lg overflow-auto h-40">
                 Awaiting request...
             </pre>
         </div>
@@ -57,25 +56,23 @@
         <!-- API Endpoints Section -->
         <div class="space-y-8">
 
-            <!-- 1.GET /jokebook/categories -->
+            <!-- 1. GET /jokebook/categories -->
             <div class="p-6 bg-white rounded-xl section-card">
-                <h3 class="text-2xl font-bold text-gray-800 mb-3">1. Get Categories</h3>
-                <p class="text-gray-600 mb-4"><code> GET /jokebook/categories</code></p>
-                <button onclick="fetchCategories()" class="w-full sm:w-auto px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">1. Get All Categories</h3>
+                <p class="text-gray-600 mb-4"><code>GET /jokebook/categories</code></p>
+                <button onclick="fetchCategories()" class="w-full sm:w-auto px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-md">
                     Fetch All Categories
                 </button>
             </div>
 
-            <!-- 2.GET /jokebook/categories/:id -->
+            <!-- 2. GET /jokebook/categories/:id -->
             <div class="p-6 bg-white rounded-xl section-card">
                 <h3 class="text-2xl font-bold text-gray-800 mb-3">2. Get Jokes by Category ID</h3>
-                <!-- FIX 1: Updated documentation for the correct endpoint structure -->
-                <p class="text-gray-600 mb-4"><code> GET /jokebook/categories/:id?limit=x</code></p>
+                <p class="text-gray-600 mb-4"><code>GET /jokebook/categories/:id?limit=x</code></p>
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <!-- Changed default value to an ID (1) for clearer context -->
-                    <input type="number" id="categoryId" value="1" placeholder="Category ID (e.g., 1)" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <input type="number" id="jokeLimit" placeholder="Limit (Optional)" class="w-24 p-3 border border-gray-300 rounded-lg">
-                    <button onclick="fetchJokesByCategory()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                    <input type="number" id="categoryId" value="1" placeholder="Category ID (e.g., 1)" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm">
+                    <input type="number" id="jokeLimit" placeholder="Limit (Optional)" class="w-full sm:w-24 p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm">
+                    <button onclick="fetchJokesByCategory()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-md">
                         Fetch Jokes
                     </button>
                 </div>
@@ -84,8 +81,8 @@
             <!-- 3. GET /jokebook/random -->
             <div class="p-6 bg-white rounded-xl section-card">
                 <h3 class="text-2xl font-bold text-gray-800 mb-3">3. Get Random Joke</h3>
-                <p class="text-gray-600 mb-4"><code> GET /jokebook/random</code></p>
-                <button onclick="fetchRandomJoke()" class="w-full sm:w-auto px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors">
+                <p class="text-gray-600 mb-4"><code>GET /jokebook/random</code></p>
+                <button onclick="fetchRandomJoke()" class="w-full sm:w-auto px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors shadow-md">
                     Fetch Random Joke
                 </button>
             </div>
@@ -93,13 +90,12 @@
             <!-- 4. POST /jokebook/jokes -->
             <div class="p-6 bg-white rounded-xl section-card">
                 <h3 class="text-2xl font-bold text-gray-800 mb-3">4. Add New Joke</h3>
-                <!-- FIXED: Changed endpoint documentation to match jokeRouter.js -->
-                <p class="text-gray-600 mb-4"><code> POST /jokebook/jokes</code></p>
+                <p class="text-gray-600 mb-4"><code>POST /jokebook/jokes</code></p>
                 <div class="space-y-4">
-                    <input type="text" id="addCategory" value="newJoke" placeholder="Category" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <input type="text" id="addSetup" value="Why don't scientists trust atoms?" placeholder="Setup" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <input type="text" id="addDelivery" value="Because they make up everything!" placeholder="Delivery" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <button onclick="addJoke()" class="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                    <input type="text" id="addCategory" value="newJoke" placeholder="Category" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+                    <input type="text" id="addSetup" value="Why don't scientists trust atoms?" placeholder="Setup" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+                    <input type="text" id="addDelivery" value="Because they make up everything!" placeholder="Delivery" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+                    <button onclick="addJoke()" class="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-md">
                         Add Joke
                     </button>
                 </div>
@@ -114,57 +110,85 @@
         // Function to update API output display
         function displayResponse(data) {
             const pre = document.querySelector('#api-output pre');
+            // Log the raw response status if available
+            if (data.status) {
+                console.log(`Response Status: ${data.status}`);
+            }
             pre.textContent = JSON.stringify(data, null, 2);
         }
 
-        // 1. GET /categories
-        async function fetchCategories() {
-            displayResponse({message: 'Fetching categories...'});
+        // Helper function for fetching
+        async function apiFetch(url, options = {}) {
             try {
-                const response = await fetch(`${BASE_URL}/categories`);
-                const data = await response.json();
+                const response = await fetch(url, options);
+                let data;
+                
+                // Attempt to parse JSON. Handle cases where the body might be empty (like 204 No Content)
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = { message: response.statusText, status: response.status };
+                }
+
+                if (!response.ok) {
+                    // Include status and statusText in the error message
+                    const errorMessage = {
+                        error: `HTTP Error: ${response.status} ${response.statusText}`,
+                        details: data.error || data.message || "No specific error message provided by the server.",
+                        path: url
+                    };
+                    displayResponse(errorMessage);
+                    return null;
+                }
+
                 displayResponse(data);
+                return data;
+
             } catch (error) {
-                displayResponse({ error: 'Failed to connect to API', details: error.message });
+                // Network or connection error
+                const networkError = { 
+                    error: 'Failed to connect to API', 
+                    details: error.message,
+                    path: url
+                };
+                displayResponse(networkError);
+                return null;
             }
+        }
+
+        // 1. GET /categories
+        function fetchCategories() {
+            displayResponse({ message: 'Fetching categories...', path: `${BASE_URL}/categories` });
+            apiFetch(`${BASE_URL}/categories`);
         }
 
         // 2. GET /categories/:id
-        async function fetchJokesByCategory() {
-            // Updated ID of the input field to reflect category ID
+        function fetchJokesByCategory() {
             const categoryId = document.getElementById('categoryId').value.trim();
             const limit = document.getElementById('jokeLimit').value.trim();
             
-            // This is correctly using /categories/:id
+            if (!categoryId) {
+                return displayResponse({ error: 'Missing Data', message: 'Category ID is required.' });
+            }
+
             let url = `${BASE_URL}/categories/${categoryId}`;
             
-            if (limit) {
+            if (limit && parseInt(limit) > 0) {
                 url += `?limit=${limit}`;
             }
 
-            displayResponse({ message: `Fetching jokes for category ID: ${categoryId}` });
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                displayResponse(data);
-            } catch (error) {
-                displayResponse({ error: 'Failed to connect to API', details: error.message });
-            }
+            displayResponse({ message: `Fetching jokes for category ID: ${categoryId}`, path: url });
+            apiFetch(url);
         }
 
         // 3. GET /random
-        async function fetchRandomJoke() {
-            displayResponse({ message: 'Fetching random joke...' });
-            try {
-                const response = await fetch(`${BASE_URL}/random`);
-                const data = await response.json();
-                displayResponse(data);
-            } catch (error) {
-                displayResponse({ error: 'Failed to connect to API', details: error.message });
-            }
+        function fetchRandomJoke() {
+            displayResponse({ message: 'Fetching random joke...', path: `${BASE_URL}/random` });
+            apiFetch(`${BASE_URL}/random`);
         }
+
         // 4. POST /jokes
-        async function addJoke() {
+        function addJoke() {
             const category = document.getElementById('addCategory').value.trim();
             const setup = document.getElementById('addSetup').value.trim();
             const delivery = document.getElementById('addDelivery').value.trim();
@@ -174,23 +198,17 @@
             }
 
             const jokeData = { category, setup, delivery };
-            displayResponse({ message: `Attempting to add joke...`, payload: jokeData });
+            const url = `${BASE_URL}/jokes`;
 
-            try {
-                // FIXED: Changed endpoint to match the router definition: /jokes
-                const response = await fetch(`${BASE_URL}/jokes`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(jokeData),
-                });
+            displayResponse({ message: `Attempting to add joke...`, path: url, payload: jokeData });
 
-                const data = await response.json();
-                displayResponse(data);
-            } catch (error) {
-                displayResponse({ error: 'Failed to connect to API or server error', details: error.message });
-            }
+            apiFetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(jokeData),
+            });
         }
     </script>
 </body>
