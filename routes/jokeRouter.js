@@ -22,6 +22,9 @@ const jokeRouterFactory = (jokeController) => {
     // Note the use of the dynamic parameter :id
     router.get('/categories/:id', jokeController.getJokesByCategoryId);
 
+    // GET /jokebook/random - Get a random joke (Added to support the frontend demo)
+    router.get('/random', jokeController.getRandomJoke); 
+
     // POST /jokebook/jokes - Add a new joke
     router.post('/jokes', jokeController.addJoke);
 
