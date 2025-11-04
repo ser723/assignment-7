@@ -27,20 +27,20 @@ const { Pool } = require('pg');
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL, // config for connecting to the database (Neon)
     ssl: { 
-         rejectUnauthorized: false
+        rejectUnauthorized: false
     } 
 });
 
 // Utility function to test the database connection
-async function testDbConnection() {
+async function testDbConnection() { 
     try {
-        const client = await pool.connect();
+    const client = await pool.connect();
         console.log('Database connection pool established successfully.');
-        client.release();
-        return true;
+    client.release();
+    return true;
     } catch (err) {
         console.error('CRITICAL ERROR: Failed to establish database connection.', err.message);
-        return false;
+    return false;
     }
 }
 
@@ -48,17 +48,27 @@ async function testDbConnection() {
 async function startServer() {
     // Test connection before starting the server
     const isConnected = await testDbConnection();
-    
+
     if (!isConnected) {
-        console.error('Server shutdown due to database connection failure.');
+     console.error('Server shutdown due to database connection failure.');
         // Optionally exit the process if the database is mandatory
-        // process.exit(1);
+        // process.exit(1); 
         return; 
     }
 
-    // MVC Integration and Route Setup - Import after pool is confirmed ready
-    // We now pass the pool instance to the jokeRouter initialization
-    const jokeRouter = require('./routes/jokeRouter')(pool); 
+    // --- MVC Integration and Route Setup ---
+    
+    // 1. Initialize the Model (requires: pool)
+    const jokeModelFactory = require('./models/jokeModel');
+    const jokeModel = jokeModelFactory(pool);
+
+    // 2. Initialize the Controller (requires: jokeModel)
+    const jokeControllerFactory = require('./controllers/jokeController');
+    const jokeController = jokeControllerFactory(jokeModel);
+
+    // 3. Initialize the Router (requires: jokeController)
+    const jokeRouterFactory = require('./routes/jokeRouter');
+    const jokeRouter = jokeRouterFactory(jokeController);
 
     // The jokeRouter will handle all requests to /jokebook endpoint
     app.use('/jokebook', jokeRouter);
@@ -70,15 +80,15 @@ async function startServer() {
 
     // Basic Error Handling Middleware for Express
     app.use((err, req, res, next) => { 
-        console.error(err.stack);
+    console.error(err.stack);
         // Use the status code from the error if available, otherwise default to 500
-        res.status(err.status || 500).send('Something broke! Internal Server Error: ' + err.message);
+     res.status(err.status || 500).send('Something broke! Internal Server Error: ' + err.message);
     });
 
     // Server Listener
     app.listen(PORT, () => {
-         console.log(`Server is running on port ${PORT}`); 
-         console.log(`Access the application at http://localhost:${PORT}`);
+        console.log(`Server is running on port ${PORT}`); 
+        console.log(`Access the application at http://localhost:${PORT}`);
     });
 }
 
