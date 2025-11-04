@@ -1,145 +1,102 @@
 /**
- * Mock In-Memory Database for Jokebook
- */
-let jokeData = [
-    { id: 1, category: "Knock-Knock", setup: "Knock, knock.", delivery: "Who's there? Nana. Nana who? Nana your business!", categoryId: 1 },
-    { id: 2, category: "Programming", setup: "Why do Java developers wear glasses?", delivery: "Because they don't C#.", categoryId: 2 },
-    { id: 3, category: "One Liner", setup: "I'm reading a book on anti-gravity.", delivery: "It's impossible to put down!", categoryId: 3 },
-    { id: 4, category: "Programming", setup: "How many programmers does it take to change a light bulb?", delivery: "None, that's a hardware problem.", categoryId: 2 },
-    { id: 5, category: "Knock-Knock", setup: "Knock, knock.", delivery: "Who's there? Lettuce. Lettuce who? Lettuce in!", categoryId: 1 },
-    { id: 6, category: "One Liner", setup: "I told my wife she was drawing her eyebrows too high.", delivery: "She looked surprised.", categoryId: 3 },
-];
-
-let categoryData = [
-    { id: 1, name: "Knock-Knock" },
-    { id: 2, name: "Programming" },
-    { id: 3, name: "One Liner" },
-];
-
-let nextJokeId = jokeData.length + 1;
-let nextCategoryId = categoryData.length + 1;
-
-/**
  * Joke Controller Factory
- * Creates and returns the JokeController object with methods for handling joke-related requests.
- * * @returns {object} The JokeController interface.
+ * Creates and returns the JokeController object, which contains the business logic
+ * for handling incoming Express requests and generating appropriate responses.
+ *
+ * It relies entirely on the provided JokeModel for all data persistence operations.
+ *
+ * @param {object} jokeModel - The JokeModel interface for database interaction.
+ * @returns {object} The JokeController with all handler functions.
  */
-const jokeControllerFactory = () => {
+const jokeControllerFactory = (jokeModel) => {
 
     /**
-     * Handles GET /categories
-     * @param {object} req - Express request object
-     * @param {object} res - Express response object
+     * GET /jokebook/categories
+     * Responds with a list of all unique joke categories.
      */
-    const getCategories = (req, res) => {
+    const getCategories = async (req, res) => {
         try {
-            // Respond with the list of categories
-            res.status(200).json({ 
-                status: 'success', 
-                data: categoryData 
-            });
+            const categories = await jokeModel.getCategories();
+            // Map the result rows to just the category names for a cleaner API response
+            const categoryNames = categories.map(cat => cat.name);
+            res.status(200).json(categoryNames);
         } catch (error) {
-            console.error('Error fetching categories:', error);
-            res.status(500).json({ error: 'Internal Server Error' });
+            console.error('Error fetching categories:', error.message);
+            res.status(500).json({ error: 'Failed to retrieve categories from database.' });
         }
     };
 
     /**
-     * Handles GET /categories/:id
-     * @param {object} req - Express request object (expects categoryId in params, optional limit in query)
-     * @param {object} res - Express response object
+     * GET /jokebook/categories/:id
+     * Responds with a list of jokes for the specified category ID.
      */
-    const getJokesByCategoryId = (req, res) => {
+    const getJokesByCategoryId = async (req, res) => {
         const categoryId = parseInt(req.params.id, 10);
         const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
 
         if (isNaN(categoryId)) {
-            return res.status(400).json({ error: 'Invalid category ID format' });
+            return res.status(400).json({ error: 'Invalid category ID provided.' });
         }
 
-        const category = categoryData.find(c => c.id === categoryId);
-        if (!category) {
-            return res.status(404).json({ error: 'Category not found' });
-        }
+        try {
+            const jokes = await jokeModel.getJokesByCategoryId(categoryId, limit);
 
-        let jokes = jokeData.filter(joke => joke.categoryId === categoryId);
-        
-        if (jokes.length === 0) {
-             return res.status(404).json({ error: `No jokes found for category ID ${categoryId}` });
-        }
+            if (jokes.length === 0) {
+                // If ID is valid but no jokes found (e.g., category exists but is empty)
+                return res.status(404).json({ error: 'No jokes found for this category ID.' });
+            }
 
-        // Apply limit if provided
-        if (limit && !isNaN(limit) && limit > 0) {
-            jokes = jokes.slice(0, limit);
+            res.status(200).json(jokes);
+        } catch (error) {
+            console.error('Error fetching jokes by category:', error.message);
+            res.status(500).json({ error: 'Failed to retrieve jokes from database.' });
         }
-
-        res.status(200).json({ 
-            status: 'success', 
-            category: category.name,
-            count: jokes.length,
-            data: jokes 
-        });
     };
 
     /**
-     * Handles GET /random
-     * @param {object} req - Express request object
-     * @param {object} res - Express response object
+     * GET /jokebook/random
+     * Responds with a single random joke.
      */
-    const getRandomJoke = (req, res) => {
-        if (jokeData.length === 0) {
-            return res.status(404).json({ error: 'No jokes available' });
-        }
-        
-        const randomIndex = Math.floor(Math.random() * jokeData.length);
-        const randomJoke = jokeData[randomIndex];
+    const getRandomJoke = async (req, res) => {
+        try {
+            const joke = await jokeModel.getRandomJoke();
+            
+            if (!joke) {
+                return res.status(404).json({ error: 'No jokes available in the database.' });
+            }
 
-        res.status(200).json({ 
-            status: 'success', 
-            data: randomJoke 
-        });
+            res.status(200).json(joke);
+        } catch (error) {
+            console.error('Error fetching random joke:', error.message);
+            res.status(500).json({ error: 'Failed to retrieve a random joke.' });
+        }
     };
 
-
     /**
-     * Handles POST /jokes
-     * @param {object} req - Express request object (expects category, setup, delivery in body)
-     * @param {object} res - Express response object
+     * POST /jokebook/jokes
+     * Adds a new joke to the database, creating the category if necessary.
      */
-    const addJoke = (req, res) => {
+    const addJoke = async (req, res) => {
         const { category, setup, delivery } = req.body;
 
-        // Basic validation
         if (!category || !setup || !delivery) {
-            return res.status(400).json({ error: 'Missing required fields: category, setup, and delivery must be provided.' });
+            return res.status(400).json({ error: 'Missing required fields: category, setup, and delivery.' });
         }
 
-        // Check if category already exists, otherwise create a new one
-        let existingCategory = categoryData.find(c => c.name.toLowerCase() === category.toLowerCase());
-        
-        if (!existingCategory) {
-            existingCategory = { id: nextCategoryId++, name: category };
-            categoryData.push(existingCategory);
-            console.log(`New category created: ${category}`);
+        try {
+            // The model handles finding/creating the category and inserting the joke
+            const newJoke = await jokeModel.addJoke(category, setup, delivery);
+            
+            // Respond with the newly created joke object
+            res.status(201).json({ 
+                message: 'Joke added successfully!', 
+                joke: newJoke 
+            });
+        } catch (error) {
+            console.error('Error adding new joke:', error.message);
+            // Check for specific database errors if needed, otherwise default to 500
+            res.status(500).json({ error: 'Failed to add joke due to a database error.' });
         }
-
-        const newJoke = {
-            id: nextJokeId++,
-            category: existingCategory.name,
-            setup: setup,
-            delivery: delivery,
-            categoryId: existingCategory.id
-        };
-
-        // Add the new joke to the in-memory data
-        jokeData.push(newJoke);
-        
-        // Respond with the created resource and 201 status
-        res.status(201).json({ 
-            status: 'success', 
-            message: 'Joke added successfully!', 
-            data: newJoke 
-        });
     };
 
     return {
