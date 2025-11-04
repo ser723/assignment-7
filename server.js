@@ -16,7 +16,7 @@ require('dotenv').config();
 
 // Factory and Model imports
 const jokeControllerFactory = require('./jokeControllerFactory');
-const jokeRouterFactory = require('./jokeRouter');
+const jokeRouterFactory = require('./jokeRouterFactory');
 const jokeModel = require('./jokeModel'); // Import the Database Model
 
 // --- Initialization ---
