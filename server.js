@@ -20,6 +20,13 @@ const jokeRouterFactory = require('./routes/jokeRouter');
 const jokeModel = require('./models/jokeModel'); // Import the Database Model
 
 // --- Initialization ---
+const {Pool} = require('pg');
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 const app = express();
 const PORT = process.env.PORT || 3000;
 
