@@ -21,10 +21,10 @@ const jokeModelFactory = (pool) => {
      * Retrieves all jokes associated with a specific category ID.
      * It uses a JOIN to include the category name for context.
      *
-     * @param {number} categoryId - The ID of the category to filter by.
+     * @param {number} category_id - The ID of the category to filter by.
      * @returns {Array<Object>} An array of joke objects: [{ id, setup, delivery, category_id, category_name }, ...]
      */
-    const getJokesByCategoryId = async (categoryId) => {
+    const getJokesByCategoryId = async (category_id) => {
         // Query joins jokes with categories on category_id
         const query = `
             SELECT
@@ -38,7 +38,7 @@ const jokeModelFactory = (pool) => {
             WHERE j.category_id = $1
             ORDER BY j.id ASC;
         `;
-        const { rows } = await pool.query(query, [categoryId]);
+        const { rows } = await pool.query(query, [category_id]);
         return rows;
     };
 
@@ -51,14 +51,14 @@ const jokeModelFactory = (pool) => {
      * @param {number} categoryId - The ID of the category the joke belongs to.
      * @returns {object} The newly created joke object, including its ID.
      */
-    const addJoke = async (setup, delivery, categoryId) => {
+    const addJoke = async (setup, delivery, category_id) => {
         // SQL query uses the correct column names: setup, delivery, and category_id
         const query = `
             INSERT INTO jokes (setup, delivery, category_id)
             VALUES ($1, $2, $3)
             RETURNING id, setup, delivery, category_id;
         `;
-        const { rows } = await pool.query(query, [setup, delivery, categoryId]);
+        const { rows } = await pool.query(query, [setup, delivery, category_id]);
 
         // Note: This returns the raw joke object without the category name.
         // The controller can choose to fetch the category name separately if needed,
