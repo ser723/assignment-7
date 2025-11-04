@@ -73,7 +73,7 @@ const addJoke = async (req, res) => {
 };
 
 module.exports = {
-    getCategories,
+    getAllCategories,
     getJokesByCategory,
     getRandomJoke,
     addJoke
