@@ -1,22 +1,29 @@
 //jokeRouter.js
 const express = require('express');
-const router = express.Router();
+const jokeModelFactory = require('../models/jokeModel');
+const jokeControllerFactory = require('../controllers/jokeController');
 
-//Import all controller functions from jokeController.js
-const jokeController = require('../controllers/jokeController');
 
-//Joke Book API Routes
+const jokeRouter = (pool) => {
+    // 1. Initialize the Model with the database pool
+    const jokeModel = jokeModelFactory(pool);
 
-//GET /jokebook/categories responds with all unique joke categories
-router.get('/categories', jokeController.getAllCategories);
+    // 2. Initialize the Controller with the Model
+    const jokeController = jokeControllerFactory(jokeModel);
+    
+    // 3. Create the router instance
+    const router = express.Router();
 
-//GET /jokebook/category/ :category query param ?limit=X
-router.get('/category/:category', jokeController.getJokesByCategory);
+    // Route to get all categories: GET /jokebook/categories
+    router.get('/categories', jokeController.getAllCategories);
 
-//GET /jokebook/random responds with a single random joke
-router.get('/random', jokeController.getRandomJoke);
+    // Route to get jokes by category: GET /jokebook/category/:category
+    router.get('/category/:category', jokeController.getJokesByCategory);
 
-//POST /jokebook/joke/add adds a new joke to the database
-router.post('/joke/add', jokeController.addJoke);
+    // Route to add a new joke: POST /jokebook/add
+    router.post('/add', jokeController.addJoke);
 
-module.exports = router;
+    return router;
+};
+
+module.exports = jokeRouter;
