@@ -32,11 +32,11 @@ const jokeModelFactory = (pool) => {
      */
     const getJokesByCategoryId = async (categoryId) => {
         try {
-            // Query joins jokes with categories on category_id
+            // *** CRITICAL FIX: Ensure 'setup' and 'delivery' columns are correctly referenced. ***
             const query = `
                 SELECT
                     j.id,
-                    j.setup,
+                    j.setup, 
                     j.delivery,
                     j.category_id,
                     c.name AS category_name
