@@ -9,37 +9,49 @@
 const jokeModelFactory = (pool) => {
     /**
      * Retrieves all categories and their IDs from the database.
-     * @returns {Array<Object>} An array of category objects: [{ id: 1, category_name: 'Knock-knock' }, ...]
+     * @returns {Array<Object>} An array of category objects: [{ id, category_name }, ...]
      */
     const getAllCategories = async () => {
-        const query = 'SELECT id, name AS category_name FROM categories ORDER BY name ASC';
-        const { rows } = await pool.query(query);
-        return rows;
+        try {
+            const query = 'SELECT id, name AS category_name FROM categories ORDER BY name ASC';
+            const { rows } = await pool.query(query);
+            return rows;
+        } catch (error) {
+            // CRITICAL: Log the actual SQL error message
+            console.error('MODEL ERROR (getAllCategories):', error.message);
+            throw error; // Re-throw the error for the controller to handle
+        }
     };
 
     /**
      * Retrieves all jokes associated with a specific category ID.
      * It uses a JOIN to include the category name for context.
      *
-     * @param {number} category_id - The ID of the category to filter by.
+     * @param {number} categoryId - The ID of the category to filter by.
      * @returns {Array<Object>} An array of joke objects: [{ id, setup, delivery, category_id, category_name }, ...]
      */
-    const getJokesByCategoryId = async (category_id) => {
-        // Query joins jokes with categories on category_id
-        const query = `
-            SELECT
-                j.id,
-                j.setup,
-                j.delivery,
-                j.category_id,
-                c.name AS category_name
-            FROM jokes j
-            JOIN categories c ON j.category_id = c.id
-            WHERE j.category_id = $1
-            ORDER BY j.id ASC;
-        `;
-        const { rows } = await pool.query(query, [category_id]);
-        return rows;
+    const getJokesByCategoryId = async (categoryId) => {
+        try {
+            // Query joins jokes with categories on category_id
+            const query = `
+                SELECT
+                    j.id,
+                    j.setup,
+                    j.delivery,
+                    j.category_id,
+                    c.name AS category_name
+                FROM jokes j
+                JOIN categories c ON j.category_id = c.id
+                WHERE j.category_id = $1
+                ORDER BY j.id ASC;
+            `;
+            const { rows } = await pool.query(query, [categoryId]);
+            return rows;
+        } catch (error) {
+            // CRITICAL: Log the actual SQL error message
+            console.error(`MODEL ERROR (getJokesByCategoryId) for ID ${categoryId}:`, error.message);
+            throw error; // Re-throw the error for the controller to handle
+        }
     };
 
     /**
@@ -51,19 +63,22 @@ const jokeModelFactory = (pool) => {
      * @param {number} categoryId - The ID of the category the joke belongs to.
      * @returns {object} The newly created joke object, including its ID.
      */
-    const addJoke = async (setup, delivery, category_id) => {
-        // SQL query uses the correct column names: setup, delivery, and category_id
-        const query = `
-            INSERT INTO jokes (setup, delivery, category_id)
-            VALUES ($1, $2, $3)
-            RETURNING id, setup, delivery, category_id;
-        `;
-        const { rows } = await pool.query(query, [setup, delivery, category_id]);
+    const addJoke = async (setup, delivery, categoryId) => {
+        try {
+            // SQL query uses the correct column names: setup, delivery, and category_id
+            const query = `
+                INSERT INTO jokes (setup, delivery, category_id)
+                VALUES ($1, $2, $3)
+                RETURNING id, setup, delivery, category_id;
+            `;
+            const { rows } = await pool.query(query, [setup, delivery, categoryId]);
 
-        // Note: This returns the raw joke object without the category name.
-        // The controller can choose to fetch the category name separately if needed,
-        // but for a simple add, the inserted data is usually sufficient.
-        return rows[0];
+            return rows[0];
+        } catch (error) {
+            // CRITICAL: Log the actual SQL error message
+            console.error('MODEL ERROR (addJoke):', error.message);
+            throw error;
+        }
     };
 
     return {
