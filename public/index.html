@@ -90,10 +90,11 @@
                 </button>
             </div>
 
-            <!-- 4. GET /jokebook/joke/add -->
+            <!-- 4. POST /jokebook/jokes -->
             <div class="p-6 bg-white rounded-xl section-card">
                 <h3 class="text-2xl font-bold text-gray-800 mb-3">4. Add New Joke</h3>
-                <p class="text-gray-600 mb-4"><code> POST /jokebook/joke/add</code></p>
+                <!-- FIXED: Changed endpoint documentation to match jokeRouter.js -->
+                <p class="text-gray-600 mb-4"><code> POST /jokebook/jokes</code></p>
                 <div class="space-y-4">
                     <input type="text" id="addCategory" value="newJoke" placeholder="Category" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                     <input type="text" id="addSetup" value="Why don't scientists trust atoms?" placeholder="Setup" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
@@ -134,7 +135,7 @@
             const categoryId = document.getElementById('categoryId').value.trim();
             const limit = document.getElementById('jokeLimit').value.trim();
             
-            // FIX 2: Updated the URL to use '/categories/' instead of '/category/'
+            // This is correctly using /categories/:id
             let url = `${BASE_URL}/categories/${categoryId}`;
             
             if (limit) {
@@ -162,7 +163,7 @@
                 displayResponse({ error: 'Failed to connect to API', details: error.message });
             }
         }
-        // 4. POST /joke/add
+        // 4. POST /jokes
         async function addJoke() {
             const category = document.getElementById('addCategory').value.trim();
             const setup = document.getElementById('addSetup').value.trim();
@@ -176,7 +177,8 @@
             displayResponse({ message: `Attempting to add joke...`, payload: jokeData });
 
             try {
-                const response = await fetch(`${BASE_URL}/joke/add`, {
+                // FIXED: Changed endpoint to match the router definition: /jokes
+                const response = await fetch(`${BASE_URL}/jokes`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
