@@ -1,29 +1,34 @@
-//jokeRouter.js
-const express = require('express');
-const jokeModelFactory = require('../models/jokeModel');
-const jokeControllerFactory = require('../controllers/jokeController');
+const { Router } = require('express');
 
+/**
+ * Joke Router Factory
+ * Creates and returns an Express Router configured with joke routes.
+ *
+ * This router is configured to match the updated controller/model logic:
+ * 1. GET /categories fetches all categories.
+ * 2. GET /categories/:id fetches jokes using the numeric category ID.
+ *
+ * @param {object} jokeController - The JokeController interface.
+ * @returns {express.Router} Configured Express Router.
+ */
+const jokeRouterFactory = (jokeController) => {
+    // We use the Router constructor provided by the Express module.
+    const router = Router();
 
-const jokeRouter = (pool) => {
-    // 1. Initialize the Model with the database pool
-    const jokeModel = jokeModelFactory(pool);
+    // GET /jokebook/categories - Get all categories
+    // Maps to jokeController.getCategories
+    router.get('/categories', jokeController.getCategories);
 
-    // 2. Initialize the Controller with the Model
-    const jokeController = jokeControllerFactory(jokeModel);
-    
-    // 3. Create the router instance
-    const router = express.Router();
+    // GET /jokebook/categories/:id - Get jokes by a specific category ID
+    // The ':id' parameter will contain the numeric category_id.
+    // This maps to jokeController.getJokesByCategoryId
+    router.get('/categories/:id', jokeController.getJokesByCategoryId);
 
-    // Route to get all categories: GET /jokebook/categories
-    router.get('/categories', jokeController.getAllCategories);
-
-    // Route to get jokes by category: GET /jokebook/category/:category
-    router.get('/category/:category', jokeController.getJokesByCategory);
-
-    // Route to add a new joke: POST /jokebook/add
-    router.post('/add', jokeController.addJoke);
+    // POST /jokebook/jokes - Add a new joke
+    // Maps to jokeController.addJoke
+    router.post('/jokes', jokeController.addJoke);
 
     return router;
 };
 
-module.exports = jokeRouter;
+module.exports = jokeRouterFactory;
