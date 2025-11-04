@@ -12,12 +12,10 @@ const jokeControllerFactory = (jokeModel) => {
 
     /**
      * GET /jokebook/categories
-     * Responds with a list of all unique joke categories.
      */
     const getCategories = async (req, res) => {
         try {
             const categories = await jokeModel.getCategories();
-            // Map the result rows to just the category names for a cleaner API response
             const categoryNames = categories.map(cat => cat.name);
             res.status(200).json(categoryNames);
         } catch (error) {
@@ -28,7 +26,6 @@ const jokeControllerFactory = (jokeModel) => {
 
     /**
      * GET /jokebook/categories/:id
-     * Responds with a list of jokes for the specified category ID.
      */
     const getJokesByCategoryId = async (req, res) => {
         const categoryId = parseInt(req.params.id, 10);
@@ -42,7 +39,6 @@ const jokeControllerFactory = (jokeModel) => {
             const jokes = await jokeModel.getJokesByCategoryId(categoryId, limit);
 
             if (jokes.length === 0) {
-                // If ID is valid but no jokes found (e.g., category exists but is empty)
                 return res.status(404).json({ error: 'No jokes found for this category ID.' });
             }
 
@@ -55,7 +51,6 @@ const jokeControllerFactory = (jokeModel) => {
 
     /**
      * GET /jokebook/random
-     * Responds with a single random joke.
      */
     const getRandomJoke = async (req, res) => {
         try {
@@ -74,7 +69,6 @@ const jokeControllerFactory = (jokeModel) => {
 
     /**
      * POST /jokebook/jokes
-     * Adds a new joke to the database, creating the category if necessary.
      */
     const addJoke = async (req, res) => {
         const { category, setup, delivery } = req.body;
@@ -84,21 +78,19 @@ const jokeControllerFactory = (jokeModel) => {
         }
 
         try {
-            // The model handles finding/creating the category and inserting the joke
             const newJoke = await jokeModel.addJoke(category, setup, delivery);
             
-            // Respond with the newly created joke object
             res.status(201).json({ 
                 message: 'Joke added successfully!', 
                 joke: newJoke 
             });
         } catch (error) {
             console.error('Error adding new joke:', error.message);
-            // Check for specific database errors if needed, otherwise default to 500
             res.status(500).json({ error: 'Failed to add joke due to a database error.' });
         }
     };
 
+    // CRITICAL: Ensure all properties are defined functions!
     return {
         getCategories,
         getJokesByCategoryId,
