@@ -1,4 +1,4 @@
-const jokeModel = require('../models/jokeModel');
+const jokeModel = require('./jokeModel');
 
 //GET /jokebook/categories responds with a list of all available joke categories
 const getAllCategories = async (req, res) => {
