@@ -42,7 +42,7 @@ pool.on( 'error', (err) => {
 });
 
 // MVC Integration and Route Setup
-const jokeRouter = require('./jokeRouter');
+const jokeRouter = require('./routes/jokeRouter');
 
 // The jokeRouter will handle all requests to /jokebook endpoint
 app.use('/jokebook', jokeRouter);
