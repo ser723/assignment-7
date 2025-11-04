@@ -137,7 +137,7 @@
 
             displayResponse({ message: `Fetching jokes for category: ${category}` });
             try {
-                const response = await fetch(url);
+                const response = await fetch(`${BASE_URL}/category/${category}`);
                 const data = await response.json();
                 displayResponse(data);
             } catch (error) {
