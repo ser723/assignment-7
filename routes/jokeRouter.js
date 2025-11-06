@@ -8,24 +8,29 @@
  * @param {object} jokeController - The JokeController interface (created by jokeControllerFactory).
  * @returns {object} The configured Express Router.
  */
-const jokeRouterFactory = (jokeController) => {
-    // 1. Import the express module to create a new router
-    const express = require('express');
-    const router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-    // 2. Define Routes:
+function jokeRouterFactory(jokeController) {
     
+    // --- Joke Routes ---
     // GET /jokebook/categories - Get all categories
     router.get('/categories', jokeController.getCategories);
 
     // GET /jokebook/categories/:id - Get jokes for a specific category ID
-    router.get('/categories/:id', jokeController.getJokesByCategoryId);
+    router.get('/:id', jokeController.getJokeById);
 
     // GET /jokebook/random - Get a random joke (Added to support the frontend demo)
     router.get('/random', jokeController.getRandomJoke); 
 
-    // POST /jokebook/jokes - Add a new joke
-    router.post('/jokes', jokeController.addJoke);
+    // POST /jokebook/ - Add a new joke
+    router.post('/', jokeController.createJoke);
+
+    //PUT /jokebook/'/:id'
+    router.put('/:id', jokeController.updateJoke);
+
+    //DELETE /jokebook/'/:id'
+    router.delete('/:id', jokeController.deleteJoke);
 
 
     // --- Error Handling Route ---
