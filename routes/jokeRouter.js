@@ -19,7 +19,6 @@ const jokeRouterFactory = (jokeController) => {
     router.get('/categories', jokeController.getCategories);
 
     // GET /jokebook/categories/:id - Get jokes for a specific category ID
-    // Note the use of the dynamic parameter :id
     router.get('/categories/:id', jokeController.getJokesByCategoryId);
 
     // GET /jokebook/random - Get a random joke (Added to support the frontend demo)
