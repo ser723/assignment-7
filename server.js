@@ -8,7 +8,7 @@
  */
 // Core imports
 const express = require('express');
-const path = require('cors');
+const cors = require('cors');
 // Load environment variables (like DATABASE_URL)
 require('dotenv').config(); 
 
