@@ -1,134 +1,155 @@
 /**
- * jokeModel.js
- * * Provides database access functions for jokes and categories using the 'pg' library.
- * The connection is managed via a pool, configured using environment variables.
+ * Joke Database Model (jokeModel.js)
+ * Manages all persistent data operations for the jokes and categories using PostgreSQL.
+ * Requires the 'pg' library to be installed (npm install pg).
+ *
+ * NOTE: It uses environment variables (DATABASE_URL, etc.) for configuration.
  */
-
 const { Pool } = require('pg');
-const fs = require('fs');
+const fs = require('fs'); // <--- Added fs import
 
-// The connection pool is initialized using the DATABASE_URL environment variable.
-let pool;
+// Initialize the PostgreSQL connection pool
+// This will automatically look for standard environment variables like DATABASE_URL
+const pool = new Pool();
 
-const jokeModel = {
-    /**
-     * Initializes the database connection pool and attempts to create the schema 
-     * if it doesn't already exist.
-     */
-    initDb: async function() {
-        console.log("Initializing database schema...");
-        try {
-            // Configuration prioritizes the DATABASE_URL environment variable.
-            const connectionString = process.env.DATABASE_URL;
+// --- NEW FUNCTION: Checks if the categories table exists. ---
+async function checkIfSchemaExists() {
+    const query = `
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_name = 'categories'
+        );
+    `;
+    const result = await pool.query(query);
+    return result.rows[0].exists;
+}
 
-            if (!connectionString) {
-                // If DATABASE_URL is missing, log a critical warning.
-                console.error("CRITICAL WARNING: DATABASE_URL is not set in environment variables. Falling back to default local connection parameters.");
-                pool = new Pool();
-            } else {
-                // Use the provided DATABASE_URL (for Neon/Cloud deployment)
-                // The 'pg' library automatically parses the connection string.
-                pool = new Pool({
-                    connectionString: connectionString,
-                });
-            }
-
-            // Test the connection
-            await pool.query('SELECT NOW()'); 
-            console.log("Database connection pool established successfully.");
-
-            // Attempt to create tables if they don't exist
-            const createSchemaSql = fs.readFileSync('./sql/create_schema.sql', 'utf8');
-            await pool.query(createSchemaSql);
-            console.log("Database schema initialization complete.");
-
-        } catch (error) {
-            console.error("CRITICAL ERROR: Failed to start server due to configuration or database issue.");
-            // Re-throw the error to prevent the server from starting with a bad DB connection
-            throw new AggregateError([error], "Error during database initialization:");
-        }
-    },
-
-    // --- CATEGORIES ---
-
-    /**
-     * Retrieves all joke categories from the database.
-     * @returns {Promise<Array>} A promise that resolves to an array of category objects.
-     */
-    getCategories: async function() {
-        // This function needs to be completed
-        console.log("jokeModel.getCategories called.");
-        // This is a placeholder. You will need to implement the actual DB query here.
-        // For now, let's return a dummy empty array to stop the 500 error once the DB connects.
-        // Once the DB connects, you will replace this with:
-        // const queryText = 'SELECT id, name FROM categories ORDER BY name';
-        // const { rows } = await pool.query(queryText);
-        // return rows;
-
-        return []; 
-    },
-
-    // --- JOKES ---
-
-    /**
-     * Retrieves a list of jokes by category ID.
-     * @param {number} categoryId - The ID of the category.
-     * @returns {Promise<Array>} A promise that resolves to an array of joke objects.
-     */
-    getJokesByCategoryId: async function(categoryId) {
-        // To be implemented later
-        return [];
-    },
-
-    /**
-     * Retrieves a random joke.
-     * @returns {Promise<Object|null>} A promise that resolves to a single joke object or null.
-     */
-    getRandomJoke: async function() {
-        // To be implemented later
-        return null;
-    },
-
-    /**
-     * Creates a new joke in the database.
-     * @param {Object} joke - The joke object containing text and category_id.
-     * @returns {Promise<Object>} A promise that resolves to the newly created joke object (including its new ID).
-     */
-    createJoke: async function(joke) {
-        // To be implemented later
-        return {};
-    },
-
-    /**
-     * Updates an existing joke by ID.
-     * @param {number} id - The ID of the joke to update.
-     * @param {Object} joke - The update joke data.
-     * @returns {Promise<Object|null>} A promise that resolves to the updated joke object or null if not found.
-     */
-    updateJoke: async function(id, joke) {
-        // To be implemented later
-        return null;
-    },
-
-    /**
-     * Deletes a joke by ID.
-     * @param {number} id - The ID of the joke being deleted.
-     * @returns {Promise<boolean>} A promise that resolves to true if deleted, false otherwise.
-     */
-    deleteJoke: async function(id) {
-        // To be implemented later
-        return false;
-    },
-
-    /**
-     * Closes the database connection pool (for graceful shutdown).
-     */
-    close: async function() {
-        if (pool) {
-            await pool.end();
-            console.log("Database pool closed.");
-        }
+/**
+ * Initializes the database tables: categories and jokes.
+ * This should be called once when the application starts up.
+ */
+async function initDb() {
+    console.log('Initializing database schema...');
+    
+    // --- CRITICAL FIX: Skip if schema already exists to prevent duplicate key errors ---
+    const schemaExists = await checkIfSchemaExists();
+    if (schemaExists) {
+        console.log('Database schema already exists. Skipping initialization.');
+        return;
     }
-};
 
-module.exports = jokeModel;
+    try {
+        // Read the schema file and execute all queries
+        const schemaSql = fs.readFileSync('./sql/create_schema.sql', 'utf-8');
+        await pool.query(schemaSql);
+        console.log('Database initialization complete.');
+    } catch (error) {
+        console.error('Error during database initialization:', error.message);
+        throw error;
+    }
+}
+
+/**
+ * Fetches all unique joke categories from the database.
+ * @returns {Promise<Array<object>>} List of categories.
+ */
+async function getCategories() {
+    const result = await pool.query('SELECT id, name FROM categories ORDER BY name');
+    // Note: The controller (jokeControllerFactory.js) will map this to an array of names.
+    return result.rows;
+}
+
+/**
+ * Fetches jokes belonging to a specific category ID, with an optional limit.
+ * @param {number} categoryId The ID of the category.
+ * @param {number|string} limit The maximum number of jokes to return.
+ * @returns {Promise<Array<object>>} List of jokes.
+ */
+async function getJokesByCategoryId(categoryId, limit = 100) {
+    const query = `
+        SELECT j.id, c.name as category, j.setup, j.delivery 
+        FROM jokes j 
+        JOIN categories c ON j.category_id = c.id 
+        WHERE j.category_id = $1 
+        ORDER BY j.created_at DESC
+        LIMIT $2;
+    `;
+    const result = await pool.query(query, [categoryId, limit]);
+    return result.rows;
+}
+
+/**
+ * Fetches a single random joke from the database.
+ * @returns {Promise<object|null>} A single joke object or null.
+ */
+async function getRandomJoke() {
+    const query = `
+        SELECT j.id, c.name as category, j.setup, j.delivery 
+        FROM jokes j 
+        JOIN categories c ON j.category_id = c.id 
+        ORDER BY RANDOM() 
+        LIMIT 1;
+    `;
+
+    const result = await pool.query(query);
+    return result.rows[0] || null;
+}
+
+/**
+ * Adds a new joke to the database. If the category does not exist, it creates it first.
+ * @param {string} categoryName The name of the category.
+ * @param {string} setup The setup line of the joke.
+ * @param {string} delivery The delivery line/punchline of the joke.
+ * @returns {Promise<object>} The newly created joke object with its ID.
+ */
+async function addJoke(categoryName, setup, delivery) {
+    // Start a transaction to ensure atomicity
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Find or create the category
+        // ON CONFLICT... is used to ensure we get the ID if it already exists.
+        const categoryResult = await client.query(
+            `INSERT INTO categories (name) VALUES ($1) 
+             ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name 
+             RETURNING id;`, 
+            [categoryName.toLowerCase()]
+        );
+        const categoryId = categoryResult.rows[0].id;
+
+        // 2. Insert the joke
+        const jokeResult = await client.query(
+            `INSERT INTO jokes (category_id, setup, delivery) 
+             VALUES ($1, $2, $3) 
+             RETURNING id, created_at;`,
+            [categoryId, setup, delivery]
+        );
+
+        await client.query('COMMIT');
+
+        // Return response expected by the client
+        return {
+            id: jokeResult.rows[0].id,
+            category: categoryName.toLowerCase(),
+            setup: setup,
+            delivery: delivery
+        };
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error('Transaction failed during addJoke:', e);
+        throw e;
+    } finally {
+        client.release();
+    }
+}
+
+// Export the model and the initialization function
+module.exports = {
+    initDb,
+    getCategories,
+    getJokesByCategoryId,
+    getRandomJoke,
+    addJoke,
+};
