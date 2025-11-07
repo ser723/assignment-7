@@ -6,21 +6,20 @@
  *
  * It includes initialization of the Joke Database Model before starting the server.
  */
-
 // Core imports
 const express = require('express');
-const path = require('path');
+const path = require('cors');
 // Load environment variables (like DATABASE_URL)
-// NOTE: Make sure you have a .env file configured if using local development.
 require('dotenv').config(); 
 
 // Factory and Model imports
-const jokeControllerFactory = require('./controllers/jokeControllerFactory'); // CORRECTED: Should be 'jokeControllerFactory'
-const jokeRouterFactory = require('./routes/jokeRouter');
-const jokeModel = require('./models/jokeModel'); // Import the Database Model
+//const jokeControllerFactory = require('./controllers/jokeControllerFactory'); // CORRECTED: Should be 'jokeControllerFactory'
+//const jokeRouterFactory = require('./routes/jokeRouter');
+//const jokeModel = require('./models/jokeModel'); // Import the Database Model
 
 // --- Initialization ---
-const {Pool} = require('pg');
+//const {Pool} = require('pg');
+//const { get } = require('http');
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -42,27 +41,36 @@ app.use(express.static(path.join(__dirname, 'public')));
  */
 async function startServer() {
     try {
-        // 1. Database Initialization: Ensure tables exist and initial data is present
-        await jokeModel.initDb();
-        console.log('Database ready. Starting server setup...');
-
-        // 2. Initialize the Controller (requires: jokeModel)
-        const jokeController = jokeControllerFactory(jokeModel);
-
-        // 3. Initialize the Router (requires: jokeController)
+        const db = await jokeModel.initDb();
+        const jokeController = jokeControllerFactory(db);
         const jokeRouter = jokeRouterFactory(jokeController);
         
-        // 4. Mount the Router at the base path
-        app.use('/jokebook', jokeRouter);
+        const app = express();
 
-        // 5. Root Route: Serves the index.html from the public directory
+        //JSON body parser for incoming requests
+        app.use(express.json());
+
+        // ---CORS Configuration---
+        // This middleware allows any external origin to make requests to this server.
+        // It is important to remember that the placement should be before any route handling.
+        app.use(cors());
+
+        //serve index.html from public directory
         app.get('/', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+            res.sendFile(path.join(__dirname, 'index.html'));
         });
 
-        // 6. Server Listener
+        // Mount Joke Router
+        app.use('/jokebook', jokeRouter);
+
+        // Server Listener
         app.listen(PORT, () => {
             console.log(`Jokebook API running at http://localhost:${PORT}`);
+        });
+
+        app.use((err, req, res, next) => {
+            console.error('Unhandled error:', err);
+            res.status(500).json({ error: 'An unexpected error occurred.' });
         });
 
     } catch (error) {
