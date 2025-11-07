@@ -3,16 +3,22 @@
  * Manages all persistent data operations for the jokes and categories using PostgreSQL.
  * Requires the 'pg' library to be installed (npm install pg).
  *
- * NOTE: It uses environment variables (DATABASE_URL, etc.) for configuration.
  */
 const { Pool } = require('pg');
-const fs = require('fs'); // <--- Added fs import
+const fs = require('fs');
 
-// Initialize the PostgreSQL connection pool
-// This will automatically look for standard environment variables like DATABASE_URL
-const pool = new Pool();
+// Initialize the PostgreSQL connection pool.
+// When using cloud databases like Neon, we must enforce SSL 
+// and specify the rejectUnauthorized option.
+const pool = new Pool({
+    // If DATABASE_URL is set, pg will use it automatically.
+    // The options below ensure a secure connection is used, which is mandatory for Neon.
+    ssl: {
+        rejectUnauthorized: false // This allows connections without a specific CA certificate.
+    }
+});
 
-// --- NEW FUNCTION: Checks if the categories table exists. ---
+//  Checks if the categories table exists. 
 async function checkIfSchemaExists() {
     const query = `
         SELECT EXISTS (
@@ -32,7 +38,7 @@ async function checkIfSchemaExists() {
 async function initDb() {
     console.log('Initializing database schema...');
     
-    // --- CRITICAL FIX: Skip if schema already exists to prevent duplicate key errors ---
+    // Skip if schema already exists to prevent duplicate key errors
     const schemaExists = await checkIfSchemaExists();
     if (schemaExists) {
         console.log('Database schema already exists. Skipping initialization.');
@@ -45,6 +51,7 @@ async function initDb() {
         await pool.query(schemaSql);
         console.log('Database initialization complete.');
     } catch (error) {
+        // If we get an error here, the path to create_schema.sql might be wrong, or the DB connection failed.
         console.error('Error during database initialization:', error.message);
         throw error;
     }
@@ -56,7 +63,6 @@ async function initDb() {
  */
 async function getCategories() {
     const result = await pool.query('SELECT id, name FROM categories ORDER BY name');
-    // Note: The controller (jokeControllerFactory.js) will map this to an array of names.
     return result.rows;
 }
 
@@ -91,7 +97,6 @@ async function getRandomJoke() {
         ORDER BY RANDOM() 
         LIMIT 1;
     `;
-
     const result = await pool.query(query);
     return result.rows[0] || null;
 }
@@ -129,7 +134,7 @@ async function addJoke(categoryName, setup, delivery) {
 
         await client.query('COMMIT');
 
-        // Return response expected by the client
+        // Return the structure expected by the client
         return {
             id: jokeResult.rows[0].id,
             category: categoryName.toLowerCase(),
