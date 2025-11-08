@@ -4,7 +4,6 @@
  * initializes the Joke Database Model, and mounts the router
  * to handle all requests under the '/jokebook' path.
  */
-// Load environment variables first ---
 // This MUST be the first line of executable code to ensure DATABASE_URL is available.
 require('dotenv').config(); 
 
@@ -17,7 +16,7 @@ const { Pool } = require('pg'); // Required for database connection
 // Factory and Model imports
 const jokeControllerFactory = require('./controllers/jokeControllerFactory');
 const jokeRouterFactory = require('./routes/jokeRouter');
-const jokeModelFactory = require('./models/jokeModel'); // Note: We use the factory here
+const jokeModelFactory = require('./models/jokeModel'); 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
