@@ -12,11 +12,14 @@ const jokeControllerFactory = (jokeModel) => {
 
     /**
      * GET /jokebook/categories
+     * Fetches all unique joke categories from the database.
      */
     const getCategories = async (req, res) => {
         try {
+            // The model returns rows like [{ id: 1, name: 'programming' }]
             const categories = await jokeModel.getCategories();
-            const categoryNames = categories.map(cat => cat.name);
+            // The controller maps this to just the names array for the client
+            const categoryNames = categories.map(cat => cat.name); 
             res.status(200).json(categoryNames);
         } catch (error) {
             console.error('Error fetching categories:', error.message);
@@ -26,20 +29,23 @@ const jokeControllerFactory = (jokeModel) => {
 
     /**
      * GET /jokebook/categories/:id
+     * Fetches jokes belonging to a specific category ID.
      */
     const getJokesByCategoryId = async (req, res) => {
         const categoryId = parseInt(req.params.id, 10);
-        const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
+        // The limit defaults to 100 if not provided
+        const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined; 
 
         if (isNaN(categoryId)) {
-            return res.status(400).json({ error: 'Invalid category ID provided.' });
+            return res.status(400).json({ error: 'Invalid category ID provided. Must be a number.' });
         }
 
         try {
             const jokes = await jokeModel.getJokesByCategoryId(categoryId, limit);
 
             if (jokes.length === 0) {
-                return res.status(404).json({ error: 'No jokes found for this category ID.' });
+                // Returns 404 only if the category ID is valid but has no jokes
+                return res.status(404).json({ message: 'No jokes found for this category ID.' });
             }
 
             res.status(200).json(jokes);
@@ -51,13 +57,14 @@ const jokeControllerFactory = (jokeModel) => {
 
     /**
      * GET /jokebook/random
+     * Retrieves a single random joke.
      */
     const getRandomJoke = async (req, res) => {
         try {
             const joke = await jokeModel.getRandomJoke();
             
             if (!joke) {
-                return res.status(404).json({ error: 'No jokes available in the database.' });
+                return res.status(404).json({ message: 'No jokes available in the database.' });
             }
 
             res.status(200).json(joke);
@@ -69,6 +76,7 @@ const jokeControllerFactory = (jokeModel) => {
 
     /**
      * POST /jokebook/jokes
+     * Adds a new joke.
      */
     const addJoke = async (req, res) => {
         const { category, setup, delivery } = req.body;
@@ -78,6 +86,7 @@ const jokeControllerFactory = (jokeModel) => {
         }
 
         try {
+            // category name is passed to the model, which handles finding/creating the category ID
             const newJoke = await jokeModel.addJoke(category, setup, delivery);
             
             res.status(201).json({ 
@@ -89,13 +98,30 @@ const jokeControllerFactory = (jokeModel) => {
             res.status(500).json({ error: 'Failed to add joke due to a database error.' });
         }
     };
+    
+    /**
+     * PUT /jokebook/:id
+     * Placeholder for updating an existing joke.
+     */
+    const updateJoke = async (req, res) => {
+        res.status(501).json({ error: "Not Implemented: Joke update logic is missing." });
+    };
 
-    // CRITICAL: Ensure all properties are defined functions!
+    /**
+     * DELETE /jokebook/:id
+     * Placeholder for deleting a joke.
+     */
+    const deleteJoke = async (req, res) => {
+        res.status(501).json({ error: "Not Implemented: Joke deletion logic is missing." });
+    };
+
     return {
         getCategories,
         getJokesByCategoryId,
         getRandomJoke,
         addJoke,
+        updateJoke,
+        deleteJoke
     };
 };
 
