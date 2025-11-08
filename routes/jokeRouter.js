@@ -20,7 +20,6 @@ function jokeRouterFactory(jokeController) {
     router.get('/categories/:id', jokeController.getJokesByCategoryId);
 
     // GET /jokebook/random - Get a random joke
-    // Uses the new getRandomJoke implementation.
     router.get('/random', jokeController.getRandomJoke);
 
     // POST /jokebook/jokes - Add a new joke
