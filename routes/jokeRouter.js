@@ -1,6 +1,8 @@
 /**
  * Joke Router Factory
  * Creates and returns the Express Router configured with joke-related routes.
+ * * It uses the factory pattern to accept and inject the jokeController dependency,
+ * ensuring the router can use the controller's methods without knowing the controller's internal workings.
  *
  * @param {object} jokeController - The JokeController interface (created by jokeControllerFactory).
  * @returns {object} The configured Express Router.
@@ -8,6 +10,7 @@
 const express = require('express');
 
 // The factory function receives the fully configured jokeController object
+// The 'jokeController' variable is defined right here as a parameter.
 function jokeRouterFactory(jokeController) {
     const router = express.Router();
 
