@@ -7,22 +7,6 @@
 // This MUST be the first line of executable code to ensure DATABASE_URL is available.
 require('dotenv').config(); 
 
-const http = require("http");
-const { neon } = require("@neondatabase/serverless");
-
-const sql = neon(process.env.DATABASE_URL);
-
-const requestHandler = async (req, res) => {
-  const result = await sql`SELECT version()`;
-  const { version } = result[0];
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end(version);
-};
-
-http.createServer(requestHandler).listen(3000, () => {
-  console.log("Server running at http://localhost:3000");
-});
-
 // Core imports
 const express = require('express');
 const cors = require('cors');
@@ -68,7 +52,9 @@ async function startServer() {
         const jokeModel = jokeModelFactory(pool);
 
         // 2. Initialize Database Schema (this will block until connected and tables are checked)
-        await jokeModel.initDb();
+        // If you need to re-initialize your database (e.g., after dropping all tables), 
+        // uncomment this line and try again.
+        // await jokeModel.initDb(); 
         console.log('Database connection pool established successfully.');
 
         // 3. Create Controller (injecting the database access object)
