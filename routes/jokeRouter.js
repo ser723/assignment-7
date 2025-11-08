@@ -1,44 +1,55 @@
-/**
- * Joke Router Factory
- * Creates and returns the Express Router configured with joke-related routes.
- * * It uses the factory pattern to accept and inject the jokeController dependency,
- * ensuring the router can use the controller's methods without knowing the controller's internal workings.
- *
- * @param {object} jokeController - The JokeController interface (created by jokeControllerFactory).
- * @returns {object} The configured Express Router.
- */
 const express = require('express');
 
-// The factory function receives the fully configured jokeController object
-// The 'jokeController' variable is defined right here as a parameter.
+/**
+ * Joke Router Factory
+ * Creates and returns an Express Router instance configured with all joke-related routes.
+ * It uses the factory pattern to accept and inject the Joke Controller dependency.
+ *
+ * @param {object} jokeController - The Joke Controller object containing business logic handlers.
+ * @returns {express.Router} An Express Router instance.
+ */
 function jokeRouterFactory(jokeController) {
     const router = express.Router();
 
-    // --- Joke Routes ---
-    
-    // GET /jokebook/categories - Get all categories
+    // --- Category Routes ---
+
+    /**
+     * Route: GET /jokebook/categories
+     * Description: Retrieves a list of all available joke categories.
+     * Controller Method: getCategories
+     */
     router.get('/categories', jokeController.getCategories);
 
-    // GET /jokebook/categories/:id - Get jokes for a specific category ID
-    router.get('/categories/:id', jokeController.getJokesByCategoryId);
+    // --- Joke Routes ---
 
-    // GET /jokebook/random - Get a random joke
-    router.get('/random', jokeController.getRandomJoke);
+    /**
+     * Route: GET /jokebook/jokes
+     * Description: Retrieves all jokes for a specific category (via query param 'categoryId') 
+     * or a random joke if no categoryId is provided.
+     * Controller Method: getJokes
+     */
+    router.get('/jokes', jokeController.getJokes);
 
-    // POST /jokebook/jokes - Add a new joke
+    /**
+     * Route: POST /jokebook/jokes
+     * Description: Adds a new joke to the database.
+     * Controller Method: addJoke
+     */
     router.post('/jokes', jokeController.addJoke);
 
-    // PUT /jokebook/:id - Update a joke
-    router.put('/:id', jokeController.updateJoke);
+    /**
+     * Route: PUT /jokebook/jokes/:id
+     * Description: Updates an existing joke by its ID.
+     * Controller Method: updateJoke
+     */
+    router.put('/jokes/:id', jokeController.updateJoke);
 
-    // DELETE /jokebook/:id - Delete a joke
-    router.delete('/:id', jokeController.deleteJoke);
-
-    // --- Error Handling Route ---
-    // This route will catch any requests to /jokebook that did not match
-    router.use((req, res, next) => {
-        res.status(404).json({ error: 'Joke resource not found' });
-    });
+    /**
+     * Route: DELETE /jokebook/jokes/:id
+     * Description: Deletes a joke by its ID.
+     * Controller Method: deleteJoke
+     */
+    router.delete('/jokes/:id', jokeController.deleteJoke);
 
     return router;
 }
