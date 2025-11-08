@@ -67,7 +67,6 @@ async function startServer() {
         
         // 6. Root Route to serve the index.html file
         app.get('/', (req, res) => {
-            // Assuming index.html is in the root directory (adjust path if needed)
             res.sendFile(path.join(__dirname, 'index.html'));
         });
         
