@@ -1,83 +1,44 @@
 /**
- * Joke Controller Factory
- * Creates and returns the JokeController object, which contains all Express handler
- * functions for the joke API endpoints.
+ * Joke Router Factory
+ * Creates and returns the Express Router configured with joke-related routes.
  *
- * @param {object} jokeModel - The JokeModel interface for database interaction.
- * @returns {object} The JokeController object with handler functions.
+ * @param {object} jokeController - The JokeController interface (created by jokeControllerFactory).
+ * @returns {object} The configured Express Router.
  */
-function jokeControllerFactory(jokeModel) {
-    const jokeController = {
+const express = require('express');
 
-        
-    /**
-         * GET /jokebook/categories
-         * Retrieves all distinct joke categories from the database.
-         * @param {object} req - Express request object.
-         * @param {object} res - Express response object.
-         * @param {function} next - Express next middleware function.
-         */
-        getCategories: async (req, res, next) => {
-            try {
-                // Call the model function to fetch categories
-                const categories = await jokeModel.getCategories();
+// The factory function receives the fully configured jokeController object
+function jokeRouterFactory(jokeController) {
+    const router = express.Router();
 
-                // Respond with a 200 OK and the list of categories
-                res.status(200).json(categories);
-            } catch (error) {
-                console.error("Error fetching categories:", error);
-                // Pass the error to the Express error handler
-                next(error); 
-            }
-        },
+    // --- Joke Routes ---
+    
+    // GET /jokebook/categories - Get all categories
+    router.get('/categories', jokeController.getCategories);
 
-        /**
-         * GET /jokebook/categories/:id
-         * Retrieves all jokes for a specific category ID.
-         */
-        getJokeById: async (req, res, next) => {
-            // Placeholder: Implement joke retrieval logic here
-            res.status(501).json({ error: "Not Implemented: getJokeById" });
-        },
+    // GET /jokebook/categories/:id - Get jokes for a specific category ID
+    router.get('/categories/:id', jokeController.getJokesByCategoryId);
 
-        /**
-         * GET /jokebook/random
-         * Retrieves a single random joke.
-         */
-        getRandomJoke: async (req, res, next) => {
-            // Placeholder: Implement random joke retrieval logic here
-            res.status(501).json({ error: "Not Implemented: getRandomJoke" });
-        },
+    // GET /jokebook/random - Get a random joke
+    // Uses the new getRandomJoke implementation.
+    router.get('/random', jokeController.getRandomJoke);
 
-        /**
-         * POST /jokebook/
-         * Creates a new joke.
-         */
-        createJoke: async (req, res, next) => {
-            // Placeholder: Implement joke creation logic here
-            res.status(501).json({ error: "Not Implemented: createJoke" });
-        },
+    // POST /jokebook/jokes - Add a new joke
+    router.post('/jokes', jokeController.addJoke);
 
-        /**
-         * PUT /jokebook/:id
-         * Updates an existing joke by ID.
-         */
-        updateJoke: async (req, res, next) => {
-            // Placeholder: Implement joke update logic here
-            res.status(501).json({ error: "Not Implemented: updateJoke" });
-        },
+    // PUT /jokebook/:id - Update a joke
+    router.put('/:id', jokeController.updateJoke);
 
-        /**
-         * DELETE /jokebook/:id
-         * Deletes a joke by ID.
-         */
-        deleteJoke: async (req, res, next) => {
-            // Placeholder: Implement joke deletion logic here
-            res.status(501).json({ error: "Not Implemented: deleteJoke" });
-        }
-    };
+    // DELETE /jokebook/:id - Delete a joke
+    router.delete('/:id', jokeController.deleteJoke);
 
-    return jokeController;
+    // --- Error Handling Route ---
+    // This route will catch any requests to /jokebook that did not match
+    router.use((req, res, next) => {
+        res.status(404).json({ error: 'Joke resource not found' });
+    });
+
+    return router;
 }
 
-module.exports = jokeControllerFactory;
+module.exports = jokeRouterFactory;
