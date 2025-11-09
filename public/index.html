@@ -3,260 +3,531 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jokebook API Client</title>
+    <title>The Joke Book</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
     <style>
-        /* Use Inter font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7fafc;
+            background-color: #f7f7f7;
         }
-        /* Custom scrollbar for better appearance */
-        #jokeListContainer::-webkit-scrollbar {
-            width: 8px;
+        /* Custom scrollbar styling for the category list */
+        .category-list::-webkit-scrollbar {
+            width: 6px;
         }
-        #jokeListContainer::-webkit-scrollbar-thumb {
-            background-color: #a0aec0;
-            border-radius: 4px;
+        .category-list::-webkit-scrollbar-thumb {
+            background-color: #a0aec0; /* Tailwind gray-400 */
+            border-radius: 3px;
         }
-        #jokeListContainer::-webkit-scrollbar-track {
-            background-color: #edf2f7;
+        .category-list::-webkit-scrollbar-track {
+            background-color: #edf2f7; /* Tailwind gray-200 */
         }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8">
-    <div class="max-w-4xl mx-auto">
-        
+<body class="min-h-screen p-4 sm:p-8 flex items-center justify-center">
+
+    <div class="w-full max-w-4xl bg-white shadow-2xl rounded-xl p-6 md:p-10 border-t-8 border-indigo-600">
         <!-- Header -->
-        <header class="text-center mb-10 p-6 bg-white rounded-xl shadow-lg">
-            <h1 class="text-4xl font-extrabold text-blue-600">The Jokebook API Client</h1>
-            <p class="mt-2 text-gray-600">Test the endpoints: fetch categories, fetch a random joke, display joke data and joke  form submission.</p>
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">
+                The Joke Book 🎤
+            </h1>
+            <p class="mt-2 text-lg text-gray-500">The world's funniest (and newest) PostgreSQL-powered API.</p>
         </header>
 
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Column 1: Categories -->
-            <div class="lg:col-span-1 p-6 bg-white rounded-xl shadow-lg">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Categories</h2>
-                <button id="fetchCategoriesBtn" 
-                        class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 transform hover:scale-105 mb-4">
-                    Load Categories
+
+            <!-- 1. Category Sidebar (Column 1) -->
+            <aside class="lg:col-span-1 bg-indigo-50 p-4 rounded-lg shadow-inner">
+                <h2 class="text-xl font-bold text-indigo-700 mb-4 flex items-center">
+                    Categories
+                </h2>
+                <button id="random-joke-btn" class="w-full bg-orange-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-orange-600 transition duration-150 mb-4 shadow-md">
+                    Get Random Joke
                 </button>
-                <div id="categoryListContainer" class="space-y-2 max-h-64 overflow-y-auto">
-                    <p class="text-gray-500">Click the button to load categories from the server.</p>
+                <div id="category-list" class="space-y-2 category-list max-h-60 lg:max-h-full overflow-y-auto pr-2">
+                    <!-- Categories will be injected here -->
+                    <div class="text-gray-500 italic">Loading categories...</div>
                 </div>
-            </div>
+            </aside>
 
-            <!-- Column 2: Random Joke & Submission Form -->
-            <div class="lg:col-span-2 space-y-8">
+            <!-- 2. Joke Display Area (Columns 2 & 3) -->
+            <main class="lg:col-span-2 space-y-8">
                 
-                <!-- Random Joke Section -->
-                <div class="p-6 bg-white rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Random Joke</h2>
-                    <div id="randomJokeDisplay" class="min-h-[100px] bg-gray-50 p-4 rounded-lg shadow-inner">
-                        <p class="text-lg font-medium text-gray-700" id="jokeSetup">...</p>
-                        <p class="text-xl font-bold text-blue-800 mt-2" id="jokeDelivery">Hit 'Get Random Joke'!</p>
-                        <p class="text-sm text-gray-500 mt-1" id="jokeCategory"></p>
-                    </div>
-                    <button id="fetchRandomJokeBtn" 
-                            class="w-full mt-4 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 transform hover:scale-105">
-                        Get Random Joke
-                    </button>
-                </div>
+                <!-- Alert/Message Box -->
+                <div id="message-box" class="hidden p-3 rounded-lg text-sm font-medium transition duration-300" role="alert"></div>
 
-                <!-- Add Joke Section -->
-                <div class="p-6 bg-white rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Add a New Joke</h2>
-                    <form id="addJokeForm" class="space-y-4">
+                <!-- Joke Display Card -->
+                <section class="bg-indigo-600 text-white p-6 rounded-lg shadow-xl">
+                    <h2 id="joke-title" class="text-2xl font-bold mb-4">Select a Category or Get a Random Joke!</h2>
+                    
+                    <div id="joke-content" class="text-xl italic min-h-[5rem] flex flex-col justify-center">
+                        <p id="joke-setup" class="mb-3 font-semibold text-gray-200">The stage is set...</p>
+                        <p id="joke-punchline" class="text-3xl font-extrabold text-yellow-300">A punchline awaits!</p>
+                        <p id="joke-footer" class="mt-4 text-right text-sm opacity-70"></p>
+                    </div>
+
+                    <div id="joke-actions" class="mt-4 flex justify-end space-x-2 hidden">
+                        <button onclick="handleEditClick()" class="text-indigo-200 hover:text-white transition duration-150">Edit</button>
+                        <button onclick="handleDeleteClick()" class="text-red-300 hover:text-red-100 transition duration-150">Delete</button>
+                    </div>
+                </section>
+                
+                <!-- Add New Joke Form -->
+                <section class="border border-gray-200 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Contribute a Joke</h2>
+                    <form id="joke-form" class="space-y-4">
+                        <input type="hidden" id="joke-id" value="">
+                        <input type="hidden" id="form-type" value="add">
+
                         <div>
-                            <label for="newCategory" class="block text-sm font-medium text-gray-700">Category Name</label>
-                            <input type="text" id="newCategory" required 
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500">
+                            <label for="setup" class="block text-sm font-medium text-gray-700">Setup</label>
+                            <textarea id="setup" rows="2" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2"></textarea>
+                            <p id="setup-error" class="text-red-500 text-xs mt-1 hidden"></p>
                         </div>
+                        
                         <div>
-                            <label for="newSetup" class="block text-sm font-medium text-gray-700">Setup (Question)</label>
-                            <textarea id="newSetup" required rows="2"
-                                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            <label for="punchline" class="block text-sm font-medium text-gray-700">Punchline</label>
+                            <textarea id="punchline" rows="2" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2"></textarea>
+                            <p id="punchline-error" class="text-red-500 text-xs mt-1 hidden"></p>
                         </div>
-                        <div>
-                            <label for="newDelivery" class="block text-sm font-medium text-gray-700">Delivery (Punchline)</label>
-                            <textarea id="newDelivery" required rows="2"
-                                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-blue-500 focus:border-blue-500"></textarea>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="category-select" class="block text-sm font-medium text-gray-700">Category</label>
+                                <select id="category-select" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 bg-white">
+                                    <option value="" disabled selected>Select a Category</option>
+                                    <!-- Options will be dynamically added -->
+                                </select>
+                                <p id="category-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" id="submit-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition duration-150 shadow-md">
+                                    Add Joke
+                                </button>
+                                <button type="button" id="cancel-btn" class="hidden ml-2 bg-gray-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-gray-600 transition duration-150 shadow-md" onclick="resetForm()">
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
-                        <button type="submit" id="addJokeBtn"
-                                class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 transform hover:scale-105">
-                            Submit Joke
-                        </button>
                     </form>
-                    <div id="jokeStatusMessage" class="mt-4 p-3 rounded-lg text-sm hidden"></div>
-                </div>
-            </div>
-            
+                </section>
+
+                <!-- Joke List (for Category View) -->
+                <section class="border border-gray-200 p-6 rounded-lg shadow-lg">
+                    <h2 id="list-header" class="text-2xl font-bold text-gray-800 mb-4">All Jokes</h2>
+                    <ul id="jokes-list" class="space-y-3">
+                        <li class="text-gray-500 italic">No jokes to display yet.</li>
+                    </ul>
+                </section>
+            </main>
         </div>
     </div>
 
-    <!-- JavaScript Client Logic (The equivalent of script.js) -->
+    <!-- JavaScript Logic -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const BASE_URL = '/jokebook'; 
-            
-            // --- Helper Functions for UI ---
-            
-            // Function to display messages in the console and status box
-            function showStatus(message, isSuccess = true) {
-                const statusDiv = document.getElementById('jokeStatusMessage');
-                statusDiv.textContent = message;
-                statusDiv.className = 'mt-4 p-3 rounded-lg text-sm';
-                statusDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
-                
-                if (isSuccess) {
-                    statusDiv.classList.add('bg-green-100', 'text-green-700');
-                } else {
-                    statusDiv.classList.add('bg-red-100', 'text-red-700');
-                }
-                statusDiv.scrollIntoView({ behavior: 'smooth' });
+        const API_BASE_PATH = '/jokebook';
+        let categories = [];
+        let currentJoke = null;
+
+        // --- DOM Elements ---
+        const categoryListEl = document.getElementById('category-list');
+        const categorySelectEl = document.getElementById('category-select');
+        const randomJokeBtn = document.getElementById('random-joke-btn');
+        const jokeTitleEl = document.getElementById('joke-title');
+        const jokeSetupEl = document.getElementById('joke-setup');
+        const jokePunchlineEl = document.getElementById('joke-punchline');
+        const jokeFooterEl = document.getElementById('joke-footer');
+        const jokeActionsEl = document.getElementById('joke-actions');
+        const jokesListEl = document.getElementById('jokes-list');
+        const listHeaderEl = document.getElementById('list-header');
+        const messageBoxEl = document.getElementById('message-box');
+        
+        const formEl = document.getElementById('joke-form');
+        const setupInput = document.getElementById('setup');
+        const punchlineInput = document.getElementById('punchline');
+        const categoryIdInput = document.getElementById('category-select');
+        const jokeIdInput = document.getElementById('joke-id');
+        const formTypeInput = document.getElementById('form-type');
+        const submitBtn = document.getElementById('submit-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        
+        // --- Utility Functions ---
+
+        /**
+         * Displays a temporary message box alert.
+         * @param {string} message - The message content.
+         * @param {string} type - 'success', 'error', or 'info'.
+         */
+        function showMessage(message, type = 'info') {
+            messageBoxEl.textContent = message;
+            messageBoxEl.className = 'p-3 rounded-lg text-sm font-medium transition duration-300';
+            messageBoxEl.classList.remove('hidden');
+
+            switch (type) {
+                case 'success':
+                    messageBoxEl.classList.add('bg-green-100', 'text-green-800');
+                    break;
+                case 'error':
+                    messageBoxEl.classList.add('bg-red-100', 'text-red-800');
+                    break;
+                case 'info':
+                default:
+                    messageBoxEl.classList.add('bg-blue-100', 'text-blue-800');
+                    break;
             }
 
-            // --- 1. Fetch and Display Categories ---
+            setTimeout(() => {
+                messageBoxEl.classList.add('hidden');
+            }, 5000);
+        }
+
+        /**
+         * Resets the joke submission/edit form to its initial 'Add Joke' state.
+         */
+        function resetForm() {
+            formEl.reset();
+            jokeIdInput.value = '';
+            formTypeInput.value = 'add';
+            submitBtn.textContent = 'Add Joke';
+            submitBtn.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
+            submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            cancelBtn.classList.add('hidden');
+            // Clear errors
+            document.querySelectorAll('[id$="-error"]').forEach(el => el.classList.add('hidden'));
+        }
+
+        /**
+         * Renders the category list in the sidebar and the select dropdown.
+         */
+        function renderCategories(data) {
+            categories = data; // Store globally
+            categoryListEl.innerHTML = '';
+            categorySelectEl.innerHTML = '<option value="" disabled selected>Select a Category</option>';
+
+            // Render 'All Jokes' button
+            const allBtn = createCategoryButton('All Jokes', null);
+            allBtn.classList.add('bg-gray-700', 'text-white', 'hover:bg-gray-800');
+            categoryListEl.appendChild(allBtn);
+
+
+            data.forEach(category => {
+                // 1. Sidebar Button
+                categoryListEl.appendChild(createCategoryButton(category.name, category.id));
+
+                // 2. Form Select Option
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categorySelectEl.appendChild(option);
+            });
+        }
+
+        /**
+         * Creates a clickable category button for the sidebar.
+         */
+        function createCategoryButton(name, id) {
+            const button = document.createElement('button');
+            button.textContent = name;
+            button.dataset.categoryId = id;
+            button.className = 'w-full text-left bg-white text-gray-700 py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition duration-150 truncate';
+            button.onclick = () => fetchJokesByCategory(id, name);
+            return button;
+        }
+
+        /**
+         * Renders the primary joke display.
+         * @param {object} joke - The joke object.
+         */
+        function renderJokeDisplay(joke) {
+            currentJoke = joke;
+            const categoryName = categories.find(c => c.id === joke.categoryId)?.name || 'Unknown';
             
-            const fetchCategories = async () => {
-                const btn = document.getElementById('fetchCategoriesBtn');
-                const listContainer = document.getElementById('categoryListContainer');
+            jokeTitleEl.textContent = 'Featured Joke';
+            jokeSetupEl.textContent = joke.setup;
+            jokePunchlineEl.textContent = joke.punchline;
+            jokeFooterEl.textContent = `Category: ${categoryName} (ID: ${joke.id})`;
+            
+            // Show edit/delete options for the featured joke
+            jokeActionsEl.classList.remove('hidden');
+        }
+
+        /**
+         * Renders the list of jokes below the form.
+         * @param {Array} jokes - Array of joke objects.
+         * @param {string} categoryName - Name of the category being displayed.
+         */
+        function renderJokeList(jokes, categoryName) {
+            jokesListEl.innerHTML = '';
+            listHeaderEl.textContent = categoryName ? `Jokes in: ${categoryName}` : 'All Jokes';
+
+            if (jokes.length === 0) {
+                jokesListEl.innerHTML = '<li class="text-gray-500 italic">No jokes found for this selection.</li>';
+                return;
+            }
+
+            jokes.forEach(joke => {
+                const li = document.createElement('li');
+                li.className = 'border-b border-gray-100 pb-2 flex justify-between items-start group';
                 
-                btn.disabled = true;
-                listContainer.innerHTML = '<p class="text-center text-blue-500">Loading...</p>';
+                const jokeText = document.createElement('div');
+                jokeText.className = 'flex-1 pr-4';
+                jokeText.innerHTML = `<p class="font-semibold text-gray-800">${joke.setup}</p><p class="text-sm text-gray-600 italic">${joke.punchline}</p>`;
 
-                try {
-                    const response = await fetch(`${BASE_URL}/categories`);
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.error || 'Failed to fetch categories.');
-                    }
-
-                    listContainer.innerHTML = ''; // Clear loading message
-                    if (data.length === 0) {
-                        listContainer.innerHTML = '<p class="text-gray-500">No categories found.</p>';
-                        return;
-                    }
-
-                    data.forEach(categoryName => {
-                        const div = document.createElement('div');
-                        div.className = 'p-2 bg-blue-50 rounded-md text-blue-800 font-medium text-sm border border-blue-200';
-                        div.textContent = categoryName.toUpperCase();
-                        listContainer.appendChild(div);
-                    });
-                    showStatus('Categories loaded successfully.', true);
-
-                } catch (error) {
-                    console.error('Error fetching categories:', error);
-                    listContainer.innerHTML = '<p class="text-red-500">Error loading categories.</p>';
-                    showStatus(`Error loading categories: ${error.message}`, false);
-                } finally {
-                    btn.disabled = false;
-                }
-            };
-
-            document.getElementById('fetchCategoriesBtn').addEventListener('click', fetchCategories);
-
-
-            // --- 2. Fetch and Display Random Joke ---
-            
-            const fetchRandomJoke = async () => {
-                const btn = document.getElementById('fetchRandomJokeBtn');
-                const setupEl = document.getElementById('jokeSetup');
-                const deliveryEl = document.getElementById('jokeDelivery');
-                const categoryEl = document.getElementById('jokeCategory');
-
-                btn.disabled = true;
-                setupEl.textContent = '... Thinking ...';
-                deliveryEl.textContent = '';
-                categoryEl.textContent = '';
-
-                try {
-                    const response = await fetch(`${BASE_URL}/random`);
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.error || 'Failed to fetch joke.');
-                    }
-                    
-                    setupEl.textContent = data.setup || 'No setup provided.';
-                    deliveryEl.textContent = data.delivery || 'No punchline provided.';
-                    categoryEl.textContent = `Category: ${data.category || 'Unknown'}`;
-                    
-                    showStatus('Random joke fetched successfully!', true);
-
-                } catch (error) {
-                    console.error('Error fetching random joke:', error);
-                    setupEl.textContent = 'Failed to load joke.';
-                    deliveryEl.textContent = 'Server error or no jokes in DB.';
-                    categoryEl.textContent = '';
-                    showStatus(`Error fetching random joke: ${error.message}`, false);
-                } finally {
-                    btn.disabled = false;
-                }
-            };
-
-            document.getElementById('fetchRandomJokeBtn').addEventListener('click', fetchRandomJoke);
-            
-
-            // --- 3. Add New Joke ---
-            
-            const addJoke = async (event) => {
-                event.preventDefault();
-
-                const form = document.getElementById('addJokeForm');
-                const btn = document.getElementById('addJokeBtn');
-                const categoryInput = document.getElementById('newCategory');
-                const setupInput = document.getElementById('newSetup');
-                const deliveryInput = document.getElementById('newDelivery');
-
-                btn.disabled = true;
-                btn.textContent = 'Submitting...';
+                const actions = document.createElement('div');
+                actions.className = 'flex space-x-2 opacity-0 group-hover:opacity-100 transition duration-150';
                 
-                const jokeData = {
-                    category: categoryInput.value.trim(),
-                    setup: setupInput.value.trim(),
-                    delivery: deliveryInput.value.trim(),
-                };
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.className = 'text-indigo-500 hover:text-indigo-700 text-xs font-medium';
+                editBtn.onclick = () => startEdit(joke);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.className = 'text-red-500 hover:text-red-700 text-xs font-medium';
+                deleteBtn.onclick = () => deleteJoke(joke.id);
 
-                try {
-                    const response = await fetch(`${BASE_URL}/jokes`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(jokeData),
-                    });
+                actions.appendChild(editBtn);
+                actions.appendChild(deleteBtn);
+                
+                li.appendChild(jokeText);
+                li.appendChild(actions);
+                jokesListEl.appendChild(li);
+            });
+        }
 
-                    const data = await response.json();
+        // --- API Calls ---
 
-                    if (!response.ok) {
-                        // Handle 400 Bad Request or other server errors
-                        throw new Error(data.error || 'Submission failed.');
-                    }
-                    
-                    showStatus(data.message || `Joke added! New ID: ${data.joke.id}`, true);
-                    form.reset(); // Clear the form on success
-                    fetchCategories(); // Refresh categories to show the new one if created
+        /**
+         * Fetches all categories.
+         */
+        async function fetchCategories() {
+            try {
+                const response = await fetch(`${API_BASE_PATH}/categories`);
+                if (!response.ok) throw new Error('Failed to fetch categories.');
+                const data = await response.json();
+                renderCategories(data);
+                fetchRandomJoke(); // Load a random joke on initial load
+            } catch (error) {
+                console.error("Error fetching categories:", error);
+                showMessage('Could not load categories. API might be down.', 'error');
+                categoryListEl.innerHTML = '<div class="text-red-500">Error loading data.</div>';
+            }
+        }
 
-                } catch (error) {
-                    console.error('Error adding joke:', error);
-                    showStatus(`Failed to add joke: ${error.message}`, false);
-                } finally {
-                    btn.disabled = false;
-                    btn.textContent = 'Submit Joke';
-                }
-            };
-
-            document.getElementById('addJokeForm').addEventListener('submit', addJoke);
+        /**
+         * Fetches all jokes for a specific category or all jokes.
+         * @param {number|null} categoryId - The ID of the category or null for all.
+         * @param {string} categoryName - The name of the category.
+         */
+        async function fetchJokesByCategory(categoryId, categoryName) {
+            jokesListEl.innerHTML = '<li class="text-gray-500 italic">Loading jokes...</li>';
             
-            // Initial load: Fetch categories immediately
+            try {
+                let url = `${API_BASE_PATH}/jokes`;
+                if (categoryId) {
+                    url += `?categoryId=${categoryId}`;
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Failed to fetch jokes for ${categoryName}.`);
+                const data = await response.json();
+                renderJokeList(data, categoryName);
+
+            } catch (error) {
+                console.error("Error fetching jokes:", error);
+                showMessage(`Error fetching jokes for ${categoryName}.`, 'error');
+                jokesListEl.innerHTML = '<li class="text-red-500">Failed to load jokes.</li>';
+            }
+        }
+
+        /**
+         * Fetches a single random joke.
+         */
+        async function fetchRandomJoke() {
+            try {
+                jokeSetupEl.textContent = 'Thinking...';
+                jokePunchlineEl.textContent = '...';
+                jokeFooterEl.textContent = '';
+                jokeActionsEl.classList.add('hidden');
+
+                const response = await fetch(`${API_BASE_PATH}/jokes/random`);
+                if (!response.ok) throw new Error('Failed to fetch random joke.');
+                
+                const joke = await response.json();
+                if (joke.id) {
+                    renderJokeDisplay(joke);
+                } else {
+                    jokeTitleEl.textContent = 'No Jokes Found';
+                    jokeSetupEl.textContent = 'The Joke Book is empty.';
+                    jokePunchlineEl.textContent = 'Time to add one!';
+                    jokeFooterEl.textContent = '';
+                }
+
+            } catch (error) {
+                console.error("Error fetching random joke:", error);
+                showMessage('Error fetching a random joke.', 'error');
+                jokeTitleEl.textContent = 'Error';
+                jokeSetupEl.textContent = 'Could not reach the server.';
+                jokePunchlineEl.textContent = 'Try again later.';
+            }
+        }
+        
+        /**
+         * Submits a new joke or updates an existing one.
+         */
+        async function submitJoke(event) {
+            event.preventDefault();
+            
+            // Validation
+            let isValid = true;
+            document.querySelectorAll('[id$="-error"]').forEach(el => el.classList.add('hidden'));
+
+            const setup = setupInput.value.trim();
+            const punchline = punchlineInput.value.trim();
+            const categoryId = parseInt(categoryIdInput.value, 10);
+            const id = jokeIdInput.value ? parseInt(jokeIdInput.value, 10) : null;
+            const isEdit = formTypeInput.value === 'edit';
+
+            if (setup.length < 5) { document.getElementById('setup-error').textContent = 'Setup must be at least 5 characters.'; document.getElementById('setup-error').classList.remove('hidden'); isValid = false; }
+            if (punchline.length < 5) { document.getElementById('punchline-error').textContent = 'Punchline must be at least 5 characters.'; document.getElementById('punchline-error').classList.remove('hidden'); isValid = false; }
+            if (isNaN(categoryId)) { document.getElementById('category-error').textContent = 'Please select a category.'; document.getElementById('category-error').classList.remove('hidden'); isValid = false; }
+
+            if (!isValid) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = isEdit ? 'Updating...' : 'Adding...';
+
+            const payload = { setup, punchline, categoryId };
+            let url = isEdit ? `${API_BASE_PATH}/jokes/${id}` : `${API_BASE_PATH}/jokes`;
+            let method = isEdit ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `Failed to ${isEdit ? 'update' : 'add'} joke.`);
+                }
+
+                showMessage(`Joke successfully ${isEdit ? 'updated' : 'added'}!`, 'success');
+                resetForm();
+                
+                // Refresh joke lists
+                fetchRandomJoke();
+                fetchJokesByCategory(null, 'All Jokes'); 
+
+            } catch (error) {
+                console.error(`Error during joke ${isEdit ? 'update' : 'addition'}:`, error);
+                showMessage(error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = isEdit ? 'Update Joke' : 'Add Joke';
+            }
+        }
+
+        /**
+         * Sets up the form for editing an existing joke.
+         */
+        function startEdit(joke) {
+            jokeIdInput.value = joke.id;
+            formTypeInput.value = 'edit';
+            setupInput.value = joke.setup;
+            punchlineInput.value = joke.punchline;
+            categoryIdInput.value = joke.categoryId;
+            
+            submitBtn.textContent = 'Update Joke';
+            submitBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            submitBtn.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+            cancelBtn.classList.remove('hidden');
+
+            // Scroll the form into view
+            formEl.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Handlers for featured joke actions
+        function handleEditClick() {
+            if (currentJoke) {
+                startEdit(currentJoke);
+            }
+        }
+
+        async function handleDeleteClick() {
+             if (currentJoke && confirm(`Are you sure you want to delete Joke ID ${currentJoke.id}?`)) {
+                await deleteJoke(currentJoke.id);
+            }
+        }
+
+
+        /**
+         * Deletes a joke by its ID.
+         */
+        async function deleteJoke(id) {
+            if (!id) return;
+
+            // Use custom modal or confirmation instead of window.confirm in a real deployment
+            if (!confirm(`Are you sure you want to delete Joke ID ${id}? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_PATH}/jokes/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.status === 204 || response.ok) {
+                    showMessage(`Joke ID ${id} deleted successfully.`, 'success');
+                    
+                    // Clear featured joke display if it was the one deleted
+                    if (currentJoke && currentJoke.id === id) {
+                        jokeTitleEl.textContent = 'Joke Deleted';
+                        jokeSetupEl.textContent = 'This joke has been removed.';
+                        jokePunchlineEl.textContent = 'Select a new one!';
+                        jokeFooterEl.textContent = '';
+                        jokeActionsEl.classList.add('hidden');
+                        currentJoke = null;
+                    }
+
+                    // Refresh lists
+                    fetchJokesByCategory(null, 'All Jokes'); 
+
+                } else if (response.status === 404) {
+                    showMessage(`Joke ID ${id} not found.`, 'error');
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to delete joke.');
+                }
+            } catch (error) {
+                console.error("Error during joke deletion:", error);
+                showMessage(error.message, 'error');
+            }
+        }
+        
+        // --- Event Listeners and Initial Load ---
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial data fetch
             fetchCategories();
+            fetchJokesByCategory(null, 'All Jokes'); 
+
+            // Form submission listener
+            formEl.addEventListener('submit', submitJoke);
+
+            // Random joke button listener
+            randomJokeBtn.addEventListener('click', fetchRandomJoke);
+            
+            // Set initial category display header
+            listHeaderEl.textContent = 'All Jokes';
         });
+
     </script>
 </body>
-</html> 
+</html>
